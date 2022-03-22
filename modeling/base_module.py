@@ -8,7 +8,7 @@ class BaseModule(pl.LightningModule):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.model = AutoModelForSequenceClassification.from_pretrained(config['model_name'],num_labels=2)
+        self.model = AutoModelForSequenceClassification.from_pretrained(config['model_name'],num_labels=2,ignore_mismatched_sizes=True)
 
     def forward(self, x):
         # x should be a dictionnary with at least a key input_ids

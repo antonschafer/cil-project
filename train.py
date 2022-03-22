@@ -4,9 +4,9 @@ import yaml
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from torch.utils.data import DataLoader
-
-from base_module import BaseModule
-
+from transformers import AutoTokenizer
+from modeling import *
+import torch
 
 def train(config):
     model = BaseModule(config=config)
@@ -14,7 +14,11 @@ def train(config):
                  ModelCheckpoint(monitor='val_loss', dirpath=config['save_path'])]
     trainer = pl.Trainer(max_epochs=config['nepochs'], gpus=1, callbacks=callbacks,
                          check_val_every_n_epoch=config['val_freq'], gradient_clip_val=1)
-    train_set, val_set = ...
+    tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+
+    dataset = BaseDataset(tokenizer=tokenizer,full_data=config['full_data'])
+
+    train_set,val_set = torch.utils.data.random_split(dataset,[len(dataset)*(1-config['val_size'],len(dataset)*(config['val_size']))])
     train_loader = DataLoader(train_set, batch_size=config['batch_size'], shuffle=True, drop_last=True, pin_memory=True,
                               num_workers=4)
     val_loader = DataLoader(val_set, batch_size=config['batch_size'], shuffle=False, drop_last=False, num_workers=4)
@@ -32,6 +36,9 @@ if __name__ == '__main__':
     parser.add_argument('--save_path', type=str, default='')
     parser.add_argument('--model_name', type=str, default='')
     parser.add_argument('--batch_size', type=int, default=128)
+    parser.add_argument('--full_data', action='store_true')
+    parser.add_argument('--val_size', type=float, default=0.1)
+
 
     args = parser.parse_args()
     config = ""
