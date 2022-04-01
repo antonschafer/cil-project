@@ -1,9 +1,8 @@
-import pandas as pd
 from torch.utils.data import Dataset
 import torch
 
 class BaseDataset(Dataset):
-    def __init__(self,tokenizer,full_data=True):
+    def __init__(self,tokenizer, full_data=True):
         super().__init__()
         self.full_data = full_data
         self.tokenizer = tokenizer
@@ -24,8 +23,8 @@ class BaseDataset(Dataset):
             self.data_pos = read_txt('./twitter-datasets/train_pos.txt')
 
     def preprocess_data(self):
-        tokens_pos = self.tokenizer(self.data_pos, padding=True, truncation=True, return_tensors="pt")['input_ids']
-        tokens_neg = self.tokenizer(self.data_neg, padding=True, truncation=True, return_tensors="pt")['input_ids']
+        tokens_pos = self.tokenizer(list(self.data_pos), padding=True, truncation=True, return_tensors="pt")['input_ids']
+        tokens_neg = self.tokenizer(list(self.data_neg), padding='max_length', max_length=104, truncation=True, return_tensors="pt")['input_ids']
         all_tokens = torch.cat((tokens_pos,tokens_neg))
         labels = torch.cat((torch.ones((len(self.data_pos))),torch.zeros((len(self.data_neg)))))
         return all_tokens,labels
