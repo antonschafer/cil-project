@@ -14,25 +14,25 @@ class BaseModule(pl.LightningModule):
 
     def forward(self, x):
         # x should be a dictionnary with at least a key input_ids
-        return self.model(x['input_ids']).logits
+        return self.model(x).logits
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         logits = self(x)
-        loss = F.nll_loss(logits, y)
+        loss = F.nll_loss(logits, y.long())
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         logits = self(x)
-        loss = F.nll_loss(logits, y)
+        loss = F.nll_loss(logits, y.long())
         self.log("val_loss", loss)
 
     def test_step(self, batch, batch_idx):
         x, y = batch
         logits = self(x)
-        loss = F.nll_loss(logits, y)
+        loss = F.nll_loss(logits, y.long())
         self.log("test_loss", loss)
 
     def configure_optimizers(self):

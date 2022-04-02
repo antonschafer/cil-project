@@ -22,8 +22,8 @@ def train(config):
     train_set, val_set = torch.utils.data.random_split(dataset, [
         round(len(dataset) * (1 - config['val_size'])), round(len(dataset) * config['val_size'])])
     train_loader = DataLoader(train_set, batch_size=config['batch_size'], shuffle=True, drop_last=True, pin_memory=True,
-                              num_workers=4)
-    val_loader = DataLoader(val_set, batch_size=config['batch_size'], shuffle=False, drop_last=False, num_workers=4)
+                              num_workers=1)
+    val_loader = DataLoader(val_set, batch_size=config['batch_size'], shuffle=False, drop_last=False, num_workers=1)
     trainer.fit(model, train_loader, val_loader)
 
 
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--save_path', type=str, default='')
     parser.add_argument('--model_name', type=str, default='bert-base-uncased')
-    parser.add_argument('--batch_size', type=int, default=128)
+    parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--full_data', action='store_true')
     parser.add_argument('--val_size', type=float, default=0.1)
 
