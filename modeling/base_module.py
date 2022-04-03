@@ -4,6 +4,7 @@ from torch.nn import functional as F
 from torch import optim
 from transformers import AutoModelForSequenceClassification
 import torch
+import pandas as pd
 
 class BaseModule(pl.LightningModule):
 
@@ -25,17 +26,17 @@ class BaseModule(pl.LightningModule):
         return self.model(x).logits
 
     def training_step(self, batch, batch_idx):
+        
         x, y = batch
-        logits = self(x)
-        loss = F.nll_loss(logits, y.long())
+        loss = self.model(x,labels=y).loss
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        logits = self(x)
-        loss = F.nll_loss(logits, y.long())
-        self.log("val_loss", loss)
+        loss= self.model(x,labels=y).loss
+        self.log("val_loss", loss,on_step=True, on_epoch=True, prog_bar=True, logger=True)
+
 
     def test_step(self, batch, batch_idx):
         x = batch
@@ -44,8 +45,11 @@ class BaseModule(pl.LightningModule):
 
     def test_epoch_end(self, outputs):
         print(self.test_list)
-        test_outputs = torch.stack(self.test_list)
-        torch.save(test_outputs, 'test_outputs.pt')
+        test_outputs = torch.vstack(self.test_list).cpu().numpy()
+        test_outputs = test_outputs.argmax(axis=1)
+        test_outputs[test_outputs == 0] = -1
+        outdf = pd.DataFrame({'Prediction':test_outputs})
+        outdf.to_csv('output.csv')
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(self.parameters(), lr=self.config['lr'])

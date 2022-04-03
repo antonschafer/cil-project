@@ -23,11 +23,14 @@ class BaseDataset(Dataset):
             self.data_pos = read_txt('./twitter-datasets/train_pos.txt')
 
     def preprocess_data(self):
-        tokens_pos = self.tokenizer(list(self.data_pos), padding=True, truncation=True, return_tensors="pt")['input_ids']
+        tokens_pos = self.tokenizer(list(self.data_pos), padding='max_length', max_length=104, truncation=True, return_tensors="pt")['input_ids']
         tokens_neg = self.tokenizer(list(self.data_neg), padding='max_length', max_length=104, truncation=True, return_tensors="pt")['input_ids']
         all_tokens = torch.cat((tokens_pos,tokens_neg))
         labels = torch.cat((torch.ones((len(self.data_pos))),torch.zeros((len(self.data_neg)))))
-        return all_tokens,labels
+        labels_vector = torch.zeros((labels.shape[0],2))
+        labels_vector[range(labels_vector.shape[0]),labels.long()] = 1
+        return all_tokens,labels_vector
+
 
     def __getitem__(self, index):
         return self.data[index], self.labels[index]
