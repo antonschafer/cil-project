@@ -13,6 +13,7 @@ class BaseModule(pl.LightningModule):
         self.config = config
         self.model = AutoModelForSequenceClassification.from_pretrained(config['model_name'], num_labels=2,
                                                                         ignore_mismatched_sizes=True)
+        self.test_list = []
 
     def load_ckpt(self,path):
         model_dict = torch.load(path)['state_dict']
@@ -37,10 +38,14 @@ class BaseModule(pl.LightningModule):
         self.log("val_loss", loss)
 
     def test_step(self, batch, batch_idx):
-        x, y = batch
+        x = batch
         logits = self(x)
-        loss = F.nll_loss(logits, y.long())
-        self.log("test_loss", loss)
+        self.test_list.append(logits)
+
+    def test_epoch_end(self, outputs):
+        print(self.test_list)
+        test_outputs = torch.stack(self.test_list)
+        torch.save(test_outputs, 'test_outputs.pt')
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(self.parameters(), lr=self.config['lr'])

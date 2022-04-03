@@ -25,6 +25,11 @@ def train(config):
                               num_workers=1)
     val_loader = DataLoader(val_set, batch_size=config['batch_size'], shuffle=False, drop_last=False, num_workers=1)
     trainer.fit(model, train_loader, val_loader)
+    
+    test_ds = BaseTestDataset(tokenizer=tokenizer)
+    test_loader = DataLoader(test_ds, batch_size=config['batch_size'], shuffle=False, drop_last=False, pin_memory=True,
+                              num_workers=4)
+    trainer.test(model,test_loader)
 
 
 if __name__ == '__main__':

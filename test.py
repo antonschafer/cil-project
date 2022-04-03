@@ -11,9 +11,9 @@ def test(config):
     trainer = pl.Trainer()
     tokenizer = AutoTokenizer.from_pretrained(config['tokenizer_name'])
 
-    test_ds = BaseTestDataset(tokenizer=tokenizer,full_data=config['full_data'])
+    test_ds = BaseTestDataset(tokenizer=tokenizer)
 
-    test_loader = DataLoader(test_ds, batch_size=config['batch_size'], shuffle=False, drop_last=False, pin_memory=True,
+    test_loader = DataLoader(test_ds, batch_size=64, shuffle=False, drop_last=False, pin_memory=True,
                               num_workers=4)
     trainer.test(model,test_loader)
 
