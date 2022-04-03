@@ -1,3 +1,4 @@
+from statistics import mode
 import pytorch_lightning as pl
 from torch.nn import functional as F
 from torch import optim
@@ -14,7 +15,10 @@ class BaseModule(pl.LightningModule):
                                                                         ignore_mismatched_sizes=True)
 
     def load_ckpt(self,path):
-        self.model.load_state_dict(torch.load(path)['state_dict'])
+        model_dict = torch.load(path)['state_dict']
+        model_dict = {k.replace('model.',''):v for k,v in model_dict.items() if 'model' in k}
+        self.model.load_state_dict(model_dict)
+        
     def forward(self, x):
         # x should be a dictionnary with at least a key input_ids
         return self.model(x).logits

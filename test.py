@@ -9,7 +9,7 @@ def test(config):
     model = BaseModule(config=config)
     model.load_ckpt(config['save_path'])
     trainer = pl.Trainer()
-    tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+    tokenizer = AutoTokenizer.from_pretrained(config['tokenizer_name'])
 
     test_ds = BaseTestDataset(tokenizer=tokenizer,full_data=config['full_data'])
 
@@ -24,7 +24,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--config_path', type=str, default='')
     parser.add_argument('--save_path', type=str, default='')
-    parser.add_argument('--model_name', type=str, default='')
+    parser.add_argument('--model_name', type=str, default='bert-base-uncased')
+    parser.add_argument('--tokenizer_name', type=str, default='bert-base-uncased')
 
     args = parser.parse_args()
     config = ""
