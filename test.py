@@ -7,6 +7,7 @@ from modeling import *
 
 def test(config):
     model = BaseModule(config=config)
+    model.load_ckpt(config['save_path'])
     trainer = pl.Trainer()
     tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
 
