@@ -15,7 +15,7 @@ def train(config):
                  ModelCheckpoint(monitor='val_loss', dirpath=config['save_path'])]
     trainer = pl.Trainer(max_epochs=config['nepochs'], gpus=1, callbacks=callbacks,
                          check_val_every_n_epoch=config['val_freq'], gradient_clip_val=1)
-    tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+    tokenizer = AutoTokenizer.from_pretrained(config['tokenizer_name'])
 
     dataset = BaseDataset(tokenizer=tokenizer, full_data=config['full_data'])
 
@@ -37,6 +37,8 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--save_path', type=str, default='')
     parser.add_argument('--model_name', type=str, default='bert-base-uncased')
+    parser.add_argument('--tokenizer_name', type=str, default='bert-base-uncased')
+
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--full_data', action='store_true')
     parser.add_argument('--val_size', type=float, default=0.1)
