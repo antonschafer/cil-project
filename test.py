@@ -12,6 +12,7 @@ def test(config):
     tokenizer = AutoTokenizer.from_pretrained(config['tokenizer_name'])
 
     test_ds = BaseTestDataset(tokenizer=tokenizer)
+    
 
     test_loader = DataLoader(test_ds, batch_size=64, shuffle=False, drop_last=False, pin_memory=True,
                               num_workers=4)

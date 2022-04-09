@@ -7,17 +7,18 @@ class BaseTestDataset(Dataset):
         self.tokenizer = tokenizer
         self.load_data()
         self.data = self.preprocess_data()
-
+   
     def load_data(self):
         def read_txt(filename):
             with open(filename) as f:
                 data = f.readlines()
-            return list(set(data))
+            return list(data)
         
         self.test_data = read_txt('twitter-datasets/test_data.txt')
-        self.test_data = self.test_data[:300]
+    
     def preprocess_data(self):
-        tokens_pos = self.tokenizer(list(self.test_data), padding=True, truncation=True, return_tensors="pt")['input_ids']
+        tokens_pos = self.tokenizer(list(self.test_data), padding='max_length', max_length=104, truncation=True, return_tensors="pt")['input_ids']
+        #tokens_pos = self.tokenizer(list(self.test_data), padding=True, truncation=True, return_tensors="pt")['input_ids']
         return tokens_pos
 
     def __getitem__(self, index):

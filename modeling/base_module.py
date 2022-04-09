@@ -5,6 +5,7 @@ from torch import optim
 from transformers import AutoModelForSequenceClassification
 import torch
 import pandas as pd
+import numpy as np
 
 class BaseModule(pl.LightningModule):
 
@@ -26,18 +27,22 @@ class BaseModule(pl.LightningModule):
         return self.model(x).logits
 
     def training_step(self, batch, batch_idx):
-        
         x, y = batch
-        loss = self.model(x,labels=y).loss
+        output = self.model(x,labels=y)
+        loss = output.loss
+        accuracy = (output.logits.argmax(axis=0) == y).mean()
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log("train_accuracy", accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        loss= self.model(x,labels=y).loss
-        self.log("val_loss", loss,on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        output = self.model(x,labels=y)
+        loss = output.loss
+        accuracy = (output.logits.argmax(axis=0) == y).mean()
 
-
+        self.log("val_loss", loss,logger=True)
+        self.log("val_accuracy", accuracy,logger=True)
     def test_step(self, batch, batch_idx):
         x = batch
         logits = self(x)
@@ -48,10 +53,11 @@ class BaseModule(pl.LightningModule):
         test_outputs = torch.vstack(self.test_list).cpu().numpy()
         test_outputs = test_outputs.argmax(axis=1)
         test_outputs[test_outputs == 0] = -1
-        outdf = pd.DataFrame({'Prediction':test_outputs})
-        outdf.to_csv('output.csv')
+        ids = np.arange(1,test_outputs.shape[0]+1)
+        outdf = pd.DataFrame({"Id":ids,'Prediction':test_outputs})
+        outdf.to_csv('output.csv',index=False)
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(self.parameters(), lr=self.config['lr'])
-        lr_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[100, 150], gamma=0.1)
+        lr_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[1, 2], gamma=0.1)
         return [optimizer], [lr_scheduler]
