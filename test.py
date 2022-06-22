@@ -17,14 +17,14 @@ def test(config):
     model = MODULES[config["module"]](config=config)
     if config["save_path"] != "":
         model.load_ckpt(config['save_path'])
-    trainer = pl.Trainer()
+    trainer = pl.Trainer(gpus=config["gpus"])
 
     _, val_set, test_set = get_base_datasets(config)
 
     if config["validation"]:
         val_loader = DataLoader(val_set, batch_size=64, shuffle=False, drop_last=False, pin_memory=True,
                                   num_workers=4)
-        trainer.test(model, val_loader)
+        trainer.validate(model, val_loader)
     else:
         test_loader = DataLoader(test_set, batch_size=64, shuffle=False, drop_last=False, pin_memory=True,
                                   num_workers=4)
@@ -41,6 +41,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_name', type=str, default='bert-base-uncased')
     parser.add_argument('--tokenizer_name', type=str, default='')  # default same as model
     parser.add_argument('--validation', action='store_true')
+    parser.add_argument('--full_data', action='store_true', help="use full validation data")
 
     args = parser.parse_args()
     config = get_bert_config(args)

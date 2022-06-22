@@ -22,7 +22,7 @@ def train(config):
 
     callbacks = [EarlyStopping(monitor="val_loss", mode="min"),
                  ModelCheckpoint(monitor='val_loss', dirpath=config['save_path'],filename="model.ckpt")]
-    trainer = pl.Trainer(max_epochs=config['nepochs'], gpus=1, callbacks=callbacks,
+    trainer = pl.Trainer(max_epochs=config['nepochs'], gpus=config["gpus"], callbacks=callbacks,
                          check_val_every_n_epoch=config['val_freq'], gradient_clip_val=1)
 
     train_set, val_set, test_set = get_base_datasets(config)
@@ -51,7 +51,6 @@ if __name__ == '__main__':
 
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--full_data', action='store_true')
-    parser.add_argument('--val_size', type=float, default=0.1)
 
     args = parser.parse_args()
     config = get_bert_config(args)

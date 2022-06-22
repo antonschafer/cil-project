@@ -10,7 +10,6 @@ def get_bert_config(args):
     if args.tokenizer_name == "":
         args.tokenizer_name = args.model_name
 
-    config = ""
     if args.config_path == '':
         config = vars(args)
     else:
@@ -19,6 +18,9 @@ def get_bert_config(args):
                 config = yaml.safe_load(stream)
             except yaml.YAMLError as exc:
                 print(exc)
+    
+    # set gpu = 1 if available
+    config["gpus"] = torch.cuda.is_available()
     
     print('Config:')
     print(config)
@@ -31,7 +33,7 @@ def get_base_datasets(config):
     data = BaseDataset(tokenizer=tokenizer, full_data=config['full_data'])
     test_data = BaseTestDataset(tokenizer=tokenizer)
 
-    n_val = round(len(data) * config["val_size"])
+    n_val = round(len(data) * 0.1)  # val size always 0.1 to keep train val split fixed. TODO messy if sometimes using full data and sometimes not
     train_data, val_data = torch.utils.data.random_split(data, [len(data) - n_val, n_val],
         generator=torch.Generator().manual_seed(42))  # Fix train and val split
     

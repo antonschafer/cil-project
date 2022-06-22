@@ -6,6 +6,7 @@ from transformers import AutoModelForSequenceClassification
 import torch
 import pandas as pd
 import numpy as np
+from sklearn.metrics import classification_report
 
 class BaseModule(pl.LightningModule):
 
@@ -38,11 +39,27 @@ class BaseModule(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y = batch
         output = self.model(x,labels=y)
-        loss = output.loss
-        #accuracy = (output.logits.argmax(axis=0) == y).mean()
 
-        self.log("val_loss", loss,logger=True)
-        #self.log("val_accuracy", accuracy,logger=True)
+        return {
+            "preds": output.logits.argmax(axis=0).tolist(),
+            "labels": y[:, 1].tolist(), 
+            "loss": output.loss
+        }
+    
+    def validation_epoch_end(self, outputs):
+        def aggregate(metric):
+            return [x for xs in outputs for x in xs[metric]]
+        
+        preds = aggregate("preds")
+        labels = aggregate("labels")
+        loss = np.mean([x["loss"] for x in outputs])
+
+        self.log("val_loss", loss)
+        self.log("val_accuracy", np.mean(preds == labels))
+
+        print("Validation Classification Report:")
+        print(classification_report(labels, preds))
+        
     def test_step(self, batch, batch_idx):
         x = batch
         logits = self(x)
