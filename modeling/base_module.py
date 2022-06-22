@@ -30,7 +30,7 @@ class BaseModule(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         output = self.model(x,labels=y)
-        loss = output.loss
+        loss = output.loss.item()
         #accuracy = (output.logits.argmax(axis=0) == y).mean()
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         #self.log("train_accuracy", accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True)
@@ -41,9 +41,9 @@ class BaseModule(pl.LightningModule):
         output = self.model(x,labels=y)
 
         return {
-            "preds": output.logits.argmax(axis=0).tolist(),
+            "preds": output.logits.argmax(axis=1).tolist(),
             "labels": y[:, 1].tolist(), 
-            "loss": output.loss
+            "loss": output.loss.item()
         }
     
     def validation_epoch_end(self, outputs):

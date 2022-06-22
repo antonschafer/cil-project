@@ -19,8 +19,7 @@ def get_bert_config(args):
             except yaml.YAMLError as exc:
                 print(exc)
     
-    # set gpu = 1 if available
-    config["gpus"] = torch.cuda.is_available()
+    config["gpus"] = 1 if torch.cuda.is_available() else 0
     
     print('Config:')
     print(config)
