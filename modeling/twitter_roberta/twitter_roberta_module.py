@@ -12,7 +12,15 @@ class TwitterRobertaModule(BaseModule):
         raise NotImplementedError("TODO")
 
     def validation_step(self, batch, batch_idx):
-        raise NotImplementedError("TODO")
+        x, y = batch
+
+        output = self.model(x)
+
+        return {
+            "preds": output.logits[:, [0, 2]].argmax(axis=1).tolist(),  # ignore "neutral" class
+            "labels": y[:, 1].tolist(), 
+            "loss": float("NaN")  # don't have labels for three classes model was trained for
+        }
 
     def test_step(self, batch, batch_idx):
         x = batch

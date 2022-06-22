@@ -1,24 +1,16 @@
 import argparse
 import pytorch_lightning as pl
-import yaml
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from torch.utils.data import DataLoader
-from transformers import AutoTokenizer
 from modeling import *
 import torch
 
-from modeling.twitter_roberta.twitter_roberta_module import TwitterRobertaModule
 from utils import get_base_datasets, get_bert_config
 
 
-MODULES = {
-    "base": BaseModule,
-    "twitter_roberta": TwitterRobertaModule
-}
-
-def train(config):
-    model = MODULES["base"](config=config)
+def train(module, config):
+    model = module(config=config)
 
     callbacks = [EarlyStopping(monitor="val_loss", mode="min"),
                  ModelCheckpoint(monitor='val_loss', dirpath=config['save_path'],filename="model.ckpt")]
@@ -53,6 +45,6 @@ if __name__ == '__main__':
     parser.add_argument('--full_data', action='store_true')
 
     args = parser.parse_args()
-    config = get_bert_config(args)
+    config, module = get_bert_config(args)
 
-    train(config)
+    train(config, module)

@@ -3,13 +3,26 @@ from transformers import AutoTokenizer
 import yaml
 
 from modeling.base_dataset import BaseDataset
+from modeling.base_module import BaseModule
 from modeling.base_testdataset import BaseTestDataset
+from modeling.twitter_roberta.twitter_roberta_module import TwitterRobertaModule
+
+MODELS = {
+    "base": {
+        "model_name": "bert-base-uncased",
+        "tokenizer_name": "bert-base-uncased",
+        "module": BaseModule
+    },
+    "twitter_roberta": {
+        "model_name": "cardiffnlp/twitter-roberta-base-sentiment-latest",
+        "tokenizer_name": "cardiffnlp/twitter-roberta-base-sentiment-latest",
+        "module": TwitterRobertaModule,
+    }
+}
+
 
 def get_bert_config(args):
-    # use same tokenizer as model
-    if args.tokenizer_name == "":
-        args.tokenizer_name = args.model_name
-
+    # read args
     if args.config_path == '':
         config = vars(args)
     else:
@@ -19,12 +32,17 @@ def get_bert_config(args):
             except yaml.YAMLError as exc:
                 print(exc)
     
+    # retrieve model info
+    config["model_name"] = MODELS[config["model"]]["model_name"]
+    config["tokenizer_name"] = MODELS[config["model"]]["tokenizer_name"]
+    module = MODELS[config["model"]]["module"]
+
     config["gpus"] = 1 if torch.cuda.is_available() else 0
     
     print('Config:')
     print(config)
 
-    return config
+    return config, module
 
 
 def get_base_datasets(config):
