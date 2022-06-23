@@ -13,9 +13,15 @@ MODELS = {
         "tokenizer_name": "bert-base-uncased",
         "module": BaseModule
     },
-    "twitter_roberta": {
-        "model_name": "cardiffnlp/twitter-roberta-base-sentiment-latest",
-        "tokenizer_name": "cardiffnlp/twitter-roberta-base-sentiment-latest",
+    "twitter_roberta": { # cardiffnlp/twitter-roberta-base-sentiment-latest model.
+        # To use: 
+        #   1. install git-lfs 
+        #       - on Euler run: env2lmod, module load git-lfs
+        #   2. clone model repo into huggingface_repos
+        #       - "git clone https://huggingface.co/cardiffnlp/twitter-roberta-base-sentiment-latest"
+        #   3. cd to huggingface_repos/twitter-roberta-base-sentiment-latest and run "git lfs pull"
+        "model_name": "./huggingface_repos/twitter-roberta-base-sentiment-latest",
+        "tokenizer_name": "./huggingface_repos/twitter-roberta-base-sentiment-latest",
         "module": TwitterRobertaModule,
     }
 }
