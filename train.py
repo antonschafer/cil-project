@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from utils import get_base_datasets, get_bert_config
 
 
-def train(module, config):
+def train(config, module):
     model = module(config=config)
 
     callbacks = [EarlyStopping(monitor="val_loss", mode="min"),
@@ -37,9 +37,7 @@ if __name__ == '__main__':
     parser.add_argument('--val_freq', type=int, default=1)
     parser.add_argument('--lr', type=float, default=2e-5)
     parser.add_argument('--save_path', type=str, default='')
-    parser.add_argument('--model_name', type=str, default='bert-base-uncased')
-    parser.add_argument('--tokenizer_name', type=str,
-                        default='')  # default same as model_name
+    parser.add_argument('--model', type=str, default='base')
 
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--full_data', action='store_true')
