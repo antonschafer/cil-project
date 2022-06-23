@@ -23,6 +23,11 @@ MODELS = {
         "model_name": "./huggingface_repos/twitter-roberta-base-sentiment-latest",
         "tokenizer_name": "./huggingface_repos/twitter-roberta-base-sentiment-latest",
         "module": TwitterRobertaModule,
+    },
+    "twitter_xlm_roberta": {
+        "model_name": "./huggingface_repos/twitter-xlm-roberta-base-sentiment",
+        "toeknizer_name": "./huggingface_repos/twitter-xlm-roberta-base-sentiment",
+        "module": TwitterRobertaModule,
     }
 }
 
