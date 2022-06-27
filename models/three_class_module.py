@@ -39,7 +39,7 @@ class ThreeClassModule(BaseModule):
         return self.model(x).logits[:, [0, 2]]  # ignore "neutral" class
 
     def validation_step(self, batch, batch_idx):
-        x, y = batch
+        x, y, texts = batch
 
         output = self.model(x)
 
@@ -49,19 +49,22 @@ class ThreeClassModule(BaseModule):
             "preds": output.logits[:, [0, 2]].argmax(axis=1).tolist(),
             "labels": y[:, 1].tolist(),
             # don't have labels for three classes model was trained for
-            "loss": float("NaN")
+            "loss": float("NaN"),
+
+
+            "texts": texts
         }
 
     def validation_epoch_end(self, outputs):
         def aggregate(metric):
-            return [x for xs in outputs for x in xs[metric]]
+            return np.array([x for xs in outputs for x in xs[metric]])
 
         preds = aggregate("preds")
         labels = aggregate("labels")
         loss = np.mean([x["loss"] for x in outputs])
 
         self.log("val_loss", loss)
-        self.log("val_accuracy", np.mean(np.array(preds) == np.array(labels)))
+        self.log("val_accuracy", np.mean(preds == labels))
 
         print("Validation Classification Report:")
         print(classification_report(labels, preds))
@@ -73,3 +76,12 @@ class ThreeClassModule(BaseModule):
         c_pred_label = Counter(list(zip(raw_preds, labels)))
         print("\tPrediction-Label pairs:", list(c_pred_label.items()))
         print()
+
+        # TODO
+        false_positives = (raw_preds == 2) & (labels == 0)
+        false_negatives = (raw_preds == 0) & (labels == 1)
+        texts = aggregate("texts")
+        print("\nFalse positives:")
+        print("".join(texts[false_positives][:20]))
+        print("\nFalse negatives:")
+        print("".join(texts[false_negatives][:20]))

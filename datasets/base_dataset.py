@@ -47,7 +47,11 @@ class BaseDataset(Dataset):
         return all_tokens, labels_vector
 
     def __getitem__(self, index):
-        return self.data[index], self.labels[index]
+        # TODO remove
+        text = self.data_pos[index] if index < len(
+            self.data_pos) else self.data_neg[index - len(self.data_pos)]
+
+        return self.data[index], self.labels[index], text
 
     def __len__(self):
         return len(self.data)
