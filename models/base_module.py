@@ -33,10 +33,11 @@ class BaseModule(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         output = self.model(x, labels=y)
-        #accuracy = (output.logits.argmax(axis=0) == y).mean()
         self.log("train_loss", output.loss.item(), on_step=True,
                  on_epoch=True, prog_bar=True, logger=True)
-        #self.log("train_accuracy", accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        accuracy = (output.logits.argmax(axis=1) == y[:, 1]).float().mean()
+        self.log("train_accuracy", accuracy, on_step=True,
+                 on_epoch=True, prog_bar=True, logger=True)
         return output.loss
 
     def validation_step(self, batch, batch_idx):

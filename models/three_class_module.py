@@ -17,21 +17,26 @@ class ThreeClassModule(BaseModule):
         self.model = AutoModelForSequenceClassification.from_pretrained(
             config['model_name'])
 
-    def training_step(self, batch, batch_idx):
-        x, y = batch
-
-        # transform labels such that they are compatible with the model
-        #     (introduce neutral labels as zeros)
-        # TODO move to dataset for efficiency
-        y = torch.cat([y[:, 0].unsqueeze(1), torch.zeros(
+    @staticmethod
+    def fix_labels(y):
+        """
+        Transform labels such taht they are compatible with the model
+        (introduce neutral labels as zeros)  # TODO move to dataset for efficiency
+        """
+        return torch.cat([y[:, 0].unsqueeze(1), torch.zeros(
             y.shape[0], 1, device=y.device), y[:, 1].unsqueeze(1)], dim=1)
 
-        output = self.model(x, labels=y)  # TODO fix labels
+    def training_step(self, batch, batch_idx):
+        x, y = batch
+        y = self.fix_labels(y)
 
-        #accuracy = (output.logits.argmax(axis=0) == y).mean()
+        output = self.model(x, labels=y)
+
         self.log("train_loss", output.loss.item(), on_step=True,
                  on_epoch=True, prog_bar=True, logger=True)
-        #self.log("train_accuracy", accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        accuracy = (output.logits.argmax(axis=1) == y[:, 2]).float().mean()
+        self.log("train_accuracy", accuracy, on_step=True,
+                 on_epoch=True, prog_bar=True, logger=True)
         return output.loss
 
     def forward(self, x):
@@ -40,16 +45,16 @@ class ThreeClassModule(BaseModule):
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
+        y = self.fix_labels(y)
 
-        output = self.model(x)
+        output = self.model(x, labels=y)
 
         return {
             "raw_preds": output.logits.argmax(axis=1).tolist(),
             # ignore "neutral" class
             "preds": output.logits[:, [0, 2]].argmax(axis=1).tolist(),
-            "labels": y[:, 1].tolist(),
-            # don't have labels for three classes model was trained for
-            "loss": float("NaN")
+            "labels": y[:, 2].tolist(),
+            "loss": output.loss.item()
         }
 
     def validation_epoch_end(self, outputs):
