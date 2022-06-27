@@ -30,6 +30,7 @@ def train(config, module):
     test_loader = DataLoader(test_set, batch_size=config['batch_size'], shuffle=False, drop_last=False, pin_memory=False,
                              num_workers=4)
 
+    # TODO also run on val_final set (make sure to log with metrics with proper name, not just val_acc)
     trainer.fit(model, train_loader, val_loader)
     trainer.test(model, test_loader)
 

@@ -10,6 +10,8 @@ def test(config, module):
         model.load_ckpt(config['save_path'])
     trainer = pl.Trainer(gpus=config["gpus"])
 
+    # TODO introduce option to test on val_final set
+    # TODO sync testing with wandb?
     _, val_set, _, test_set = get_base_datasets(config)
 
     if config["validation"]:

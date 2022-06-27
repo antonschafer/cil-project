@@ -62,6 +62,7 @@ def get_bert_config(args):
 
 
 def get_base_datasets(config, test=True, train_val=True):
+    # TODO cache tokenized datasets, make sure that not confused when differnet tokenizer, full_data option or transform used
     tokenizer = AutoTokenizer.from_pretrained(config['tokenizer_name'])
     data_transform = MODELS[config['model']]['data_transform']
 
