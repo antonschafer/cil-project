@@ -10,7 +10,7 @@ def test(config, module):
         model.load_ckpt(config['save_path'])
     trainer = pl.Trainer(gpus=config["gpus"])
 
-    _, val_set, test_set = get_base_datasets(config)
+    _, val_set, _, test_set = get_base_datasets(config)
 
     if config["validation"]:
         val_loader = DataLoader(val_set, batch_size=64, shuffle=False, drop_last=False, pin_memory=True,

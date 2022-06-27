@@ -6,16 +6,22 @@ from torch.utils.data import DataLoader
 
 from utils import get_base_datasets, get_bert_config
 
+from pytorch_lightning.loggers import WandbLogger
+import wandb
+
 
 def train(config, module):
     model = module(config=config)
 
-    callbacks = [EarlyStopping(monitor="val_loss", mode="min"),
-                 ModelCheckpoint(monitor='val_loss', dirpath=config['save_path'], filename="model.ckpt")]
-    trainer = pl.Trainer(max_epochs=config['nepochs'], gpus=config["gpus"], callbacks=callbacks,
-                         check_val_every_n_epoch=config['val_freq'], gradient_clip_val=1)
+    wandb_logger = WandbLogger(
+        project="twitter-sentiment-analysis", name=config["run_name"], offline=True)
 
-    train_set, val_set, test_set = get_base_datasets(config)
+    callbacks = [EarlyStopping(monitor="val_loss", mode="min"),
+                 ModelCheckpoint(monitor='val_loss', dirpath=wandb.run.dir, filename="model")]
+    trainer = pl.Trainer(max_epochs=config['nepochs'], gpus=config["gpus"], callbacks=callbacks,
+                         check_val_every_n_epoch=config['val_freq'], gradient_clip_val=1, logger=wandb_logger)
+
+    train_set, val_set, _, test_set = get_base_datasets(config)
 
     train_loader = DataLoader(train_set, batch_size=config['batch_size'], shuffle=True, drop_last=True, pin_memory=False,
                               num_workers=1)
@@ -32,13 +38,13 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('--config_path', type=str, default='')  # TODO needed?
+    parser.add_argument('--model', type=str, default='base')
+    parser.add_argument('--run_name', type=str, default=None)
+
     parser.add_argument('--nepochs', type=int, default=1)
-    parser.add_argument('--config_path', type=str, default='')
     parser.add_argument('--val_freq', type=int, default=1)
     parser.add_argument('--lr', type=float, default=2e-5)
-    parser.add_argument('--save_path', type=str, default='')
-    parser.add_argument('--model', type=str, default='base')
-
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--full_data', action='store_true')
 
