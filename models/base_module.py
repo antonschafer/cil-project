@@ -1,3 +1,4 @@
+import os
 from statistics import mode
 import pytorch_lightning as pl
 from torch.nn import functional as F
@@ -7,6 +8,7 @@ import torch
 import pandas as pd
 import numpy as np
 from sklearn.metrics import classification_report
+import wandb
 
 
 class BaseModule(pl.LightningModule):
@@ -17,7 +19,6 @@ class BaseModule(pl.LightningModule):
         self.config = config
         self.model = AutoModelForSequenceClassification.from_pretrained(config['model_name'], num_labels=2,
                                                                         ignore_mismatched_sizes=True)
-        self.test_list = []
 
     def load_ckpt(self, path):
         model_dict = torch.load(path)['state_dict']
@@ -32,10 +33,11 @@ class BaseModule(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         output = self.model(x, labels=y)
-        #accuracy = (output.logits.argmax(axis=0) == y).mean()
         self.log("train_loss", output.loss.item(), on_step=True,
                  on_epoch=True, prog_bar=True, logger=True)
-        #self.log("train_accuracy", accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        accuracy = (output.logits.argmax(axis=1) == y[:, 1]).float().mean()
+        self.log("train_accuracy", accuracy, on_step=True,
+                 on_epoch=True, prog_bar=True, logger=True)
         return output.loss
 
     def validation_step(self, batch, batch_idx):
@@ -65,15 +67,15 @@ class BaseModule(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         x = batch
         logits = self(x)
-        self.test_list.append(logits)
+        return logits
 
     def test_epoch_end(self, outputs):
-        test_outputs = torch.vstack(self.test_list).cpu().numpy()
+        test_outputs = torch.vstack(outputs).cpu().numpy()
         test_outputs = test_outputs.argmax(axis=1)
         test_outputs[test_outputs == 0] = -1
         ids = np.arange(1, test_outputs.shape[0]+1)
         outdf = pd.DataFrame({"Id": ids, 'Prediction': test_outputs})
-        outdf.to_csv('output.csv', index=False)
+        outdf.to_csv(os.path.join(wandb.run.dir, 'output.csv'), index=False)
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(self.parameters(), lr=self.config['lr'])

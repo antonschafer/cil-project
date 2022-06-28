@@ -1,5 +1,6 @@
 import torch
 from transformers import AutoTokenizer
+import wandb
 import yaml
 
 from datasets.base_dataset import BaseDataset
@@ -60,16 +61,30 @@ def get_bert_config(args):
     return config, module
 
 
-def get_base_datasets(config):
+def get_base_datasets(config, test=True, train_val=True):
+    # TODO cache tokenized datasets, make sure that not confused when differnet tokenizer, full_data option or transform used
     tokenizer = AutoTokenizer.from_pretrained(config['tokenizer_name'])
-    data = BaseDataset(
-        tokenizer=tokenizer, full_data=config['full_data'], transform=MODELS[config['model']]['data_transform'])
-    test_data = BaseTestDataset(
-        tokenizer=tokenizer, transform=MODELS[config['model']]['data_transform'])
+    data_transform = MODELS[config['model']]['data_transform']
 
-    # val size always 0.1 to keep train val split fixed. TODO messy if sometimes using full data and sometimes not
-    n_val = round(len(data) * 0.1)
-    train_data, val_data = torch.utils.data.random_split(data, [len(data) - n_val, n_val],
-                                                         generator=torch.Generator().manual_seed(42))  # Fix train and val split
+    if train_val:
+        data = BaseDataset(
+            tokenizer=tokenizer, full_data=config['full_data'], transform=data_transform)
 
-    return train_data, val_data, test_data
+        # split train, val, val_final: 1.1M, 100K, 50K
+        n_val = round(len(data) * 0.08)
+        n_val_final = round(len(data) * 0.04)
+        n_train = len(data) - n_val - n_val_final
+
+        # fix split with random seed. Note that splits might still be different when using full dataset vs small dataset
+        train_data, val_data, val_final_data = torch.utils.data.random_split(data, [n_train, n_val, n_val_final],
+                                                                             generator=torch.Generator().manual_seed(42))
+    else:
+        train_data, val_data, val_final_data = None, None, None
+
+    if test:
+        test_data = BaseTestDataset(
+            tokenizer=tokenizer, transform=data_transform)
+    else:
+        test_data = None
+
+    return train_data, val_data, val_final_data, test_data
