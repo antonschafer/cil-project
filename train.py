@@ -1,4 +1,5 @@
 import argparse
+import os
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
@@ -16,15 +17,17 @@ DEBUG_TRAINER_ARGS = {"limit_train_batches": 10,
 def train(config, module):
     model = module(config=config)
 
+    os.makedirs(config["save_dir"], exist_ok=True)
     wandb_logger = WandbLogger(
-        project="twitter-sentiment-analysis", name=config["run_name"], offline=True)
+        project="twitter-sentiment-analysis", name=config["run_name"], offline=True, save_dir=config["save_dir"])
 
     callbacks = [EarlyStopping(monitor="val_loss", mode="min"),
                  ModelCheckpoint(monitor='val_loss', dirpath=wandb.run.dir, filename="model")]
 
     extra_args = DEBUG_TRAINER_ARGS if config["debug"] else {}
     trainer = pl.Trainer(max_epochs=config['nepochs'], gpus=config["gpus"], callbacks=callbacks,
-                         check_val_every_n_epoch=config['val_freq'], gradient_clip_val=1, logger=wandb_logger,
+                         val_check_interval=config['val_check_interval'], gradient_clip_val=1, logger=wandb_logger,
+                         accumulate_grad_batches=config['accumulate_grad_batches'],
                          **extra_args)
 
     train_set, val_set, _, test_set = get_base_datasets(config)
@@ -48,11 +51,15 @@ if __name__ == '__main__':
     parser.add_argument('--config_path', type=str, default='')  # TODO needed?
     parser.add_argument('--model', type=str, default='base')
     parser.add_argument('--run_name', type=str, default=None)
+    parser.add_argument('--save_dir', type=str,
+                        default=os.path.join("/cluster/scratch", os.environ["USER"]))
 
     parser.add_argument('--nepochs', type=int, default=1)
-    parser.add_argument('--val_freq', type=int, default=1)
+    # to validate only once per epoch, use 1.0 (not 1)
+    parser.add_argument('--val_check_interval', type=int, default=0.25)
     parser.add_argument('--lr', type=float, default=2e-5)
     parser.add_argument('--batch_size', type=int, default=16)
+    parser.add_argument('--accumulate_grad_batches', type=int, default=1)
 
     parser.add_argument('--full_data', action='store_true')
     parser.add_argument('--debug', action='store_true',

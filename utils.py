@@ -1,6 +1,8 @@
+import hashlib
+import os
+import dill  # can pickle lambdas
 import torch
 from transformers import AutoTokenizer
-import wandb
 import yaml
 
 from datasets.base_dataset import BaseDataset
@@ -61,12 +63,46 @@ def get_bert_config(args):
     return config, module
 
 
-def get_base_datasets(config, test=True, train_val=True):
-    # TODO cache tokenized datasets, make sure that not confused when differnet tokenizer, full_data option or transform used
-    tokenizer = AutoTokenizer.from_pretrained(config['tokenizer_name'])
+def load_pickle(path):
+    with open(path, 'rb') as f:
+        return dill.load(f)
+
+
+def write_pickle(data, path):
+    with open(path, 'wb') as f:
+        dill.dump(data, f)
+
+
+def my_hash(b):
+    return
+
+
+def function_to_hash(func):
+    if "lambda" in str(func):
+        # bytecode instructions
+        b = func.__code__.co_code
+    else:
+        b = str(func).encode("utf-8")
+    return int(hashlib.sha256(b).hexdigest(), 16) % 10 ** 12
+
+
+def get_base_datasets(config):
     data_transform = MODELS[config['model']]['data_transform']
 
-    if train_val:
+    # check if can load from cache
+    option_str = "_".join(
+        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform))])
+    cache_dir = os.path.join(config["save_dir"], "cache")
+    os.makedirs(cache_dir, exist_ok=True)
+    cache_file = os.path.join(cache_dir, option_str + ".pkl")
+    if os.path.exists(cache_file):
+        print("Loading datasets from cache:", cache_file)
+        return load_pickle(cache_file)
+    else:
+        print("Building datasets...")
+
+        # build datasets
+        tokenizer = AutoTokenizer.from_pretrained(config['tokenizer_name'])
         data = BaseDataset(
             tokenizer=tokenizer, full_data=config['full_data'], transform=data_transform)
 
@@ -78,13 +114,12 @@ def get_base_datasets(config, test=True, train_val=True):
         # fix split with random seed. Note that splits might still be different when using full dataset vs small dataset
         train_data, val_data, val_final_data = torch.utils.data.random_split(data, [n_train, n_val, n_val_final],
                                                                              generator=torch.Generator().manual_seed(42))
-    else:
-        train_data, val_data, val_final_data = None, None, None
-
-    if test:
         test_data = BaseTestDataset(
             tokenizer=tokenizer, transform=data_transform)
-    else:
-        test_data = None
 
-    return train_data, val_data, val_final_data, test_data
+        # save to cache
+        print("Saving datasets to cache:", cache_file)
+        write_pickle(
+            [train_data, val_data, val_final_data, test_data], cache_file)
+
+        return train_data, val_data, val_final_data, test_data

@@ -11,4 +11,4 @@
 5. Login to wandb: wandb login
 6. Run experiments, e.g. `bsub -R "rusage[mem=32000,ngpus_excl_p=1]" -W 12:00 bash sample_job.sh`
     - for interactive job run e.g `bsub -R "rusage[mem=32000,ngpus_excl_p=1]" -Ip bash`
-7. After experiments have run, sync to weights and biases via: `wandb sync wandb/offline-run*`
+7. After experiments have run, sync to weights and biases via: `wandb sync /cluster/scratch/$USER/wandb/offline-run*` (or sync individual run, just make sure not sync debug/useless runs)
