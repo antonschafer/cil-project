@@ -1,24 +1,24 @@
 import os
-from statistics import mode
-import pytorch_lightning as pl
-from torch.nn import functional as F
-from torch import optim
-from transformers import AutoModelForSequenceClassification
-import torch
 import pandas as pd
+import pytorch_lightning as pl
+import torch
 import numpy as np
 from sklearn.metrics import classification_report
 import wandb
 
 
 class BaseModule(pl.LightningModule):
+    """
+    BaseModule for task, superclass for all models that automates logging etc
+
+    To implement: init, preds_labels_loss, forward, test_step, configure_optimizers
+    """
 
     def __init__(self, config):
         super().__init__()
         self.save_hyperparameters()
         self.config = config
-        self.model = AutoModelForSequenceClassification.from_pretrained(config['model_name'], num_labels=2,
-                                                                        ignore_mismatched_sizes=True)
+        self.model = None
 
     def load_ckpt(self, path):
         model_dict = torch.load(path)['state_dict']
@@ -26,28 +26,29 @@ class BaseModule(pl.LightningModule):
                       v in model_dict.items() if 'model' in k}
         self.model.load_state_dict(model_dict)
 
+    def preds_labels_loss(self, batch):
+        """
+        Returns predictions (0/1), labels (0/1), and loss (not detached) for a batch.
+        """
+        pass
+
     def forward(self, x):
-        # x should be a dictionnary with at least a key input_ids
-        return self.model(x).logits
+        pass
 
     def training_step(self, batch, batch_idx):
-        x, y = batch
-        output = self.model(x, labels=y)
-        self.log("train_loss", output.loss.item(), on_step=True,
+        preds, labels, loss = self.preds_labels_loss(batch)
+        self.log("train_loss", loss.item(), on_step=True,
                  on_epoch=True, prog_bar=True, logger=True)
-        accuracy = (output.logits.argmax(axis=1) == y[:, 1]).float().mean()
-        self.log("train_accuracy", accuracy, on_step=True,
+        self.log("train_accuracy", (preds == labels).float().mean(), on_step=True,  # TODO check train acc correct
                  on_epoch=True, prog_bar=True, logger=True)
-        return output.loss
+        return loss
 
     def validation_step(self, batch, batch_idx):
-        x, y = batch
-        output = self.model(x, labels=y)
-
+        preds, labels, loss = self.preds_labels_loss(batch)
         return {
-            "preds": output.logits.argmax(axis=1).tolist(),
-            "labels": y[:, 1].tolist(),
-            "loss": output.loss.item()
+            "preds": preds.tolist(),
+            "labels": labels.tolist(),
+            "loss": loss.item()
         }
 
     def validation_epoch_end(self, outputs):
@@ -65,20 +66,16 @@ class BaseModule(pl.LightningModule):
         print(classification_report(labels, preds))
 
     def test_step(self, batch, batch_idx):
-        x = batch
-        logits = self(x)
-        return logits
+        pass
 
     def test_epoch_end(self, outputs):
-        test_outputs = torch.vstack(outputs).cpu().numpy()
-        test_outputs = test_outputs.argmax(axis=1)
-        test_outputs[test_outputs == 0] = -1
-        ids = np.arange(1, test_outputs.shape[0]+1)
-        outdf = pd.DataFrame({"Id": ids, 'Prediction': test_outputs})
+        if preds.device.type == "cuda":  # TODO remove
+            print("\n\nPREDS ON CUDA"*10)
+        preds = torch.vstack(outputs).cpu().numpy()
+        outputs = np.where(preds == 1, 1, -1)
+        ids = np.arange(1, outputs.shape[0]+1)
+        outdf = pd.DataFrame({"Id": ids, 'Prediction': preds})
         outdf.to_csv(os.path.join(wandb.run.dir, 'output.csv'), index=False)
 
     def configure_optimizers(self):
-        optimizer = optim.AdamW(self.parameters(), lr=self.config['lr'])
-        lr_scheduler = optim.lr_scheduler.MultiStepLR(
-            optimizer, milestones=[1, 2], gamma=0.1)
-        return [optimizer], [lr_scheduler]
+        pass
