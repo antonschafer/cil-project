@@ -9,26 +9,27 @@ import pandas as pd
 from datasets.base_dataset import BaseDataset
 from models.base_module import BaseModule
 from datasets.base_testdataset import BaseTestDataset
-from models.three_class_module import ThreeClassModule
+from models.binary_hf_module import BinaryHFModule
+from models.three_class_hf_module import ThreeClassHFModule
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 MODELS = {
     "base": {
         "model_name": "bert-base-uncased",
         "tokenizer_name": "bert-base-uncased",
-        "module": BaseModule,
+        "module": BinaryHFModule,
         "data_transform": None,
     },
     "twitter_roberta": {
         "model_name": "cardiffnlp/twitter-roberta-base-sentiment-latest",
         "tokenizer_name": "cardiffnlp/twitter-roberta-base-sentiment-latest",
-        "module": ThreeClassModule,
+        "module": ThreeClassHFModule,
         "data_transform": lambda x: x.replace("<user>", "@user"),
     },
     "twitter_xlm_roberta": {
         "model_name": "cardiffnlp/twitter-xlm-roberta-base-sentiment",
         "tokenizer_name": "cardiffnlp/twitter-xlm-roberta-base-sentiment",
-        "module": ThreeClassModule,
+        "module": ThreeClassHFModule,
         "data_transform": lambda x: x.replace("<user>", "@user"),
     }
 }
