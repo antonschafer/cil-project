@@ -4,7 +4,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from torch.utils.data import DataLoader
 
-from utils import get_base_datasets, get_bert_config
+from utils import get_base_datasets, get_bert_config, compute_metrics
 
 from pytorch_lightning.loggers import WandbLogger
 import wandb
@@ -35,6 +35,8 @@ def train(config, module):
         val_set, batch_size=config['batch_size'], shuffle=False, drop_last=False, num_workers=1)
     test_loader = DataLoader(test_set, batch_size=config['batch_size'], shuffle=False, drop_last=False, pin_memory=False,
                              num_workers=4)
+    compute_metrics(model, val_set, config['batch_size'], config["run_name"])
+
 
     # TODO also run on val_final set (make sure to log with metrics with proper name, not just val_acc)
     trainer.fit(model, train_loader, val_loader)
