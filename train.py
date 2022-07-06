@@ -35,12 +35,12 @@ def train(config, module):
         val_set, batch_size=config['batch_size'], shuffle=False, drop_last=False, num_workers=1)
     test_loader = DataLoader(test_set, batch_size=config['batch_size'], shuffle=False, drop_last=False, pin_memory=False,
                              num_workers=4)
-    compute_metrics(model, val_set, config['batch_size'], config["run_name"])
 
 
     # TODO also run on val_final set (make sure to log with metrics with proper name, not just val_acc)
     trainer.fit(model, train_loader, val_loader)
     trainer.test(model, test_loader)
+    compute_metrics(model, val_set, config['batch_size'], config["run_name"])
 
 
 if __name__ == '__main__':

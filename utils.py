@@ -102,35 +102,35 @@ def compute_metrics(model, val_set, batch_size, name):
         t += batch_size
     if name is None:
         name = str(time.time())
-    pd.DataFrame(torch.Tensor(val_set.dataset.labels.argmax(axis=1).tolist()) == torch.Tensor(preds)).to_csv('statistics/' + name + '.csv', header=None)
+    pd.DataFrame(torch.Tensor(val_set.dataset.labels.argmax(axis=1).tolist()) == torch.Tensor(preds)).to_csv('statistics/' + name + '.csv', header=None, index=False)
     merge_metrics()
 
 def merge_metrics():
     df = pd.DataFrame(columns=['model1', 'model2', 'model3', 'coverage'])
-    df.to_csv(os.path.join( 'coverage.csv'))
+    df.to_csv(os.path.join('statistics', 'coverage.csv'))
 
-    for filename in os.listdir('statistics'):
-        if filename == 'combined.csv':
+    for i, filename in enumerate(os.listdir('statistics')):
+        if filename == 'coverage.csv':
             continue
 
-        cov = pd.DataFrame([[filename, None, None, pd.read_csv(os.path.join('statistics', filename)).mean()]])
-        cov.to_csv('coverage', index=False, header=False, mode='a')
+        cov = pd.DataFrame([[filename, None, None, pd.read_csv(os.path.join('statistics', filename)).mean()[0]]])
+        cov.to_csv(os.path.join('statistics', 'coverage.csv'), header=False, mode='a')
 
-        for filename2 in os.listdir('statistics'):
-            if filename2 == 'combined.csv' or filename == filename2:
+        for j, filename2 in enumerate(os.listdir('statistics')):
+            if filename2 == 'coverage.csv' or j <= i:
                 continue
 
-            comb = pd.read_csv(os.path.join('statistics', filename)) | pd.read_csv(os.path.join('statistics', filename2))
+            comb = pd.read_csv(os.path.join('statistics', filename)).iloc[:, 0] | pd.read_csv(os.path.join('statistics', filename2)).iloc[:, 0]
             cov = pd.DataFrame([[filename, filename2, None, comb.mean()]])
-            cov.to_csv('coverage', index=False, header=False, mode='a')
+            cov.to_csv(os.path.join('statistics', 'coverage.csv'), header=False, mode='a')
 
-            for filename3 in os.listdir('statistics'):
-                if filename2 == 'combined.csv' or filename == filename3 or filename2 == filename3:
+            for k, filename3 in enumerate(os.listdir('statistics')):
+                if filename3 == 'coverage.csv' or filename == filename3 or k <= j:
                     continue
 
-                comb = comb | pd.read_csv(os.path.join('statistics', filename3))
-                cov = pd.DataFrame([[filename, filename2, filename3, comb.mean()]])
-                cov.to_csv('coverage', index=False, header=False, mode='a')
+                combs = comb | pd.read_csv(os.path.join('statistics', filename3)).iloc[:, 0]
+                cov = pd.DataFrame([[filename, filename2, filename3, combs.mean()]])
+                cov.to_csv(os.path.join('statistics', 'coverage.csv'), header=False, mode='a')
 
 
 
