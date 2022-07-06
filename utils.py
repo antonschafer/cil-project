@@ -102,7 +102,7 @@ def compute_metrics(model, val_set, batch_size, name):
         t += batch_size
     if name is None:
         name = str(time.time())
-    pd.DataFrame(torch.Tensor(val_set.dataset.labels.argmax(axis=1).tolist()) == torch.Tensor(preds)).to_csv('statistics/' + name + '.csv', header=None, index=False)
+    pd.DataFrame(torch.Tensor(val_set.dataset.labels.argmax(axis=1).tolist()) == torch.Tensor(preds)).to_csv('statistics/' + str(name) + '.csv', header=None, index=False)
     merge_metrics()
 
 def merge_metrics():
