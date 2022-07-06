@@ -19,7 +19,7 @@ def train(config, module):
 
     os.makedirs(config["save_dir"], exist_ok=True)
     wandb_logger = WandbLogger(
-        project="twitter-sentiment-analysis", name=config["run_name"], offline=True, save_dir=config["save_dir"])
+        project="twitter-sentiment-analysis", name=config["run_name"], save_dir=config["save_dir"])
 
     callbacks = [EarlyStopping(monitor="val_loss", mode="min"),
                  ModelCheckpoint(monitor='val_loss', dirpath=wandb.run.dir, filename="model")]
@@ -43,9 +43,11 @@ def train(config, module):
     trainer.fit(model, train_loader, val_loader)
     trainer.test(model, test_loader)
     try:
-        compute_metrics(model, val_set, config['batch_size'], config["run_name"])
+        compute_metrics(
+            model, val_set, config['batch_size'], config["run_name"])
     except:
         pass
+
 
 if __name__ == '__main__':
 
