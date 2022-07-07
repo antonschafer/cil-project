@@ -2,11 +2,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 from torch import optim
-import numpy as np
-from sklearn.metrics import classification_report
 from models.base_module import BaseModule
-
-from utils import write_output_file
 
 
 class EnsembleModule(BaseModule):
@@ -16,7 +12,10 @@ class EnsembleModule(BaseModule):
         self.save_hyperparameters()
         self.config = config
 
-        self.submodels = submodels
+        self.submodels = submodels  # no module list s.t. not registered as submodules
+        for m in self.submodels:
+            m.eval()
+            m.to(self.device)
 
         self.prediction_head = nn.Sequential(
             nn.Dropout(config["dropout"]),
