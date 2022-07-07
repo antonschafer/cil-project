@@ -23,6 +23,8 @@ import wandb
 DEBUG_TRAINER_ARGS = {"limit_train_batches": 10,
                       "limit_val_batches": 5}
 
+WANDB_PROJECT_PATH = "cil-biggoodteam/twitter-sentiment-analysis/"
+
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 MODELS = {
@@ -219,3 +221,38 @@ def get_base_arg_parser():
                         help="only run a few batches")
 
     return parser
+
+
+def load_checkpoint(run_id):
+    """
+    Load checkpoint file from wandb
+    """
+    print("Loading checkpoint of run {} from wandb...".format(run_id))
+    # download file
+    return wandb.restore(
+        'model.ckpt', run_path=WANDB_PROJECT_PATH + run_id).name
+
+
+def restore_module_from_checkpoint(run_id):
+    """
+    Load module and dataset of wandb run (only for models in MODELS)
+    """
+    checkpoint = torch.load(load_checkpoint(run_id), map_location=device)
+    config = checkpoint["hyper_parameters"]["config"]
+    model_name = ["model"]
+    module = MODELS[model_name]["module"](config=config)
+    module.load_from_checkpoint(checkpoint)
+
+    return module
+
+
+# give list of names to restore
+
+
+# do we ever need to restore ensemble model
+
+# models might be different, some pl, some not
+
+
+# could just save logits and build model from logits
+# logits of val set and val final set and test set

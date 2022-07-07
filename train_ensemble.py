@@ -1,3 +1,5 @@
+import argparse
+import os
 from torch.utils.data import DataLoader
 import wandb
 from models.binary_hf_module import BinaryHFModule
@@ -7,7 +9,21 @@ from models.three_class_hf_module import ThreeClassHFModule
 from utils import get_base_arg_parser, get_base_datasets, get_trainer
 
 
+submodules = [
+    {"name": "base", "module": BinaryHFModule},
+    {"name": "twitter_roberta", "module": ThreeClassHFModule},
+    {"name": "twitter_xlm_roberta", "module": EnsembleModule},
+]
+
+
 def train(config):
+    # Load checkpoint from wandb
+
+    p_str = "cil-biggoodteam/twitter-sentiment-analysis/15catbfp"
+    m = wandb.restore('model.ckpt', run_path=p_str)
+
+    breakpoint()
+
     # TODO add submodels and in_dim
     model = EnsembleModule(config=config, submodels=None, in_dim=None)
     trainer = get_trainer(config)
