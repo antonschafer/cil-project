@@ -8,14 +8,9 @@ from models.base_module import BaseModule
 class EnsembleModule(BaseModule):
 
     def __init__(self, submodels, in_dim, config):
-        super().__init__()
+        super().__init__(config=config)
         self.save_hyperparameters()
         self.config = config
-
-        self.submodels = submodels  # no module list s.t. not registered as submodules
-        for m in self.submodels:
-            m.eval()
-            m.to(self.device)
 
         self.prediction_head = nn.Sequential(
             nn.Dropout(config["dropout"]),
@@ -27,12 +22,7 @@ class EnsembleModule(BaseModule):
         )
 
     def forward(self, x):
-        with torch.no_grad():
-            sub_output_list = [sub(x_sub)
-                               for sub, x_sub in zip(self.submodels, x)]
-            sub_outputs = torch.stack(sub_output_list, dim=1)
-
-        return self.prediction_head(sub_outputs)
+        return self.prediction_head(x)
 
     def preds_labels_loss(self, batch):
         x, y_bin = batch
