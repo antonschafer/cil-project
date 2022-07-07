@@ -69,9 +69,7 @@ class BaseModule(pl.LightningModule):
         pass
 
     def test_epoch_end(self, outputs):
-        if preds.device.type == "cuda":  # TODO remove
-            print("\n\nPREDS ON CUDA"*10)
-        preds = torch.vstack(outputs).cpu().numpy()
+        preds = np.concatenate(outputs)
         outputs = np.where(preds == 1, 1, -1)
         ids = np.arange(1, outputs.shape[0]+1)
         outdf = pd.DataFrame({"Id": ids, 'Prediction': preds})

@@ -43,7 +43,7 @@ class EnsembleModule(BaseModule):
         return loss, preds, y
 
     def test_step(self, batch, batch_idx):
-        return self(batch) > 0
+        return (self(batch) > 0).cpu()
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(self.parameters(), lr=self.config['lr'])

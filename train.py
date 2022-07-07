@@ -21,12 +21,14 @@ def train(config, module):
     # TODO also run on val_final set (make sure to log with metrics with proper name, not just val_acc)
     trainer.fit(model, train_loader, val_loader)
     trainer.test(model, test_loader)
-    try:
-        compute_metrics(
-            model, val_set, config['batch_size'], config["run_name"])
-    except:
-        pass
 
+
+#     try:
+#         compute_metrics(
+#             model, val_set, config['batch_size'], config["run_name"])
+#     except:
+#         pass
+#
 
 if __name__ == '__main__':
 
