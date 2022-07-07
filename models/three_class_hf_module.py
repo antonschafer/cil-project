@@ -35,7 +35,7 @@ class ThreeClassHFModule(BaseModule):
         return output.logits[:, [0, 2]].argmax(axis=1), y[:, 2], output.loss
 
     def test_step(self, batch, batch_idx):
-        return torch.argmax(self(batch), axis=1)
+        return torch.argmax(self(batch), axis=1).cpu()
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(self.parameters(), lr=self.config['lr'])
