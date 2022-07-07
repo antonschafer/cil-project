@@ -8,7 +8,7 @@ def test(config, module):
     model = module(config=config)
     if config["save_path"] != "":
         model.load_ckpt(config['save_path'])
-    trainer = pl.Trainer(gpus=config["gpus"])
+    trainer = pl.Trainer(accelerator="auto")
 
     # TODO introduce option to test on val_final set
     # TODO sync testing with wandb?
