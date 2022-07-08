@@ -7,8 +7,9 @@ from models.base_module import BaseModule
 
 class EnsembleModule(BaseModule):
 
-    def __init__(self, submodels, in_dim, config):
+    def __init__(self, in_dim, config):  # TODO put in_dim in config?
         super().__init__(config=config)
+        self.in_dim = in_dim
         self.save_hyperparameters()
         self.config = config
 
@@ -36,7 +37,7 @@ class EnsembleModule(BaseModule):
         return (self(batch) > 0).cpu()
 
     def configure_optimizers(self):
-        optimizer = optim.AdamW(self.parameters(), lr=self.config['lr'])
+        optimizer = optim.Adam(self.parameters(), lr=self.config['lr'])
         lr_scheduler_config = {
             "scheduler": optim.lr_scheduler.ReduceLROnPlateau(
                 optimizer, factor=0.1, patience=2, verbose=True,

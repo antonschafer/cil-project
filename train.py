@@ -9,26 +9,30 @@ def train(config, module):
 
     trainer = get_trainer(config)
 
-    train_set, val_set, _, test_set = get_base_datasets(config)
+    train_set, val_set, val_final_set, test_set = get_base_datasets(config)
 
     train_loader = DataLoader(
         train_set, batch_size=config['batch_size'], shuffle=True, drop_last=True, num_workers=1)
     val_loader = DataLoader(
         val_set, batch_size=config['batch_size'], num_workers=1)
+    val_final_loader = DataLoader(
+        val_final_set, batch_size=config['batch_size'], num_workers=1)
     test_loader = DataLoader(
         test_set, batch_size=config['batch_size'], num_workers=4)
 
-    # TODO also run on val_final set (make sure to log with metrics with proper name, not just val_acc)
     trainer.fit(model, train_loader, val_loader)
-    trainer.test(model, test_loader)
 
+    model.run_final_eval(
+        trainer=trainer, val_loader=val_loader, val_final_loader=val_final_loader, test_loader=test_loader)
 
-#     try:
+#   TODO change s.t. can use logged predictions
+#   try:
 #         compute_metrics(
 #             model, val_set, config['batch_size'], config["run_name"])
 #     except:
 #         pass
 #
+
 
 if __name__ == '__main__':
 
