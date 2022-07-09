@@ -2,3 +2,5 @@ twitter-datasets/*
 eda.ipynb
 lightning_logs
 lsf*
+__pycache_
+__pycache__
