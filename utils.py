@@ -45,12 +45,18 @@ def get_bert_config(args):
             except yaml.YAMLError as exc:
                 print(exc)
 
+    if config["save_dir"] == "":
+        config["save_dir"] = os.path.join("/cluster/scratch", os.environ["USER"])
+    
+    config["debug"] = args.debug
+
     # retrieve model info
     config["model_name"] = MODELS[config["model"]]["model_name"]
     config["tokenizer_name"] = MODELS[config["model"]]["tokenizer_name"]
     module = MODELS[config["model"]]["module"]
 
     config["gpus"] = int(torch.cuda.is_available())
+
 
     print('Config:')
     print(config)
@@ -81,6 +87,7 @@ def function_to_hash(func):
     return int(hashlib.sha256(b).hexdigest(), 16) % 10 ** 12
 
 
+
 def get_base_datasets(config):
     data_transform = MODELS[config['model']]['data_transform']
 
@@ -98,17 +105,10 @@ def get_base_datasets(config):
 
         # build datasets
         tokenizer = AutoTokenizer.from_pretrained(config['tokenizer_name'])
-        data = BaseDataset(
-            tokenizer=tokenizer, full_data=config['full_data'], transform=data_transform)
+        train_data = BaseDataset(split="train",tokenizer=tokenizer, full_data=config['full_data'], transform=data_transform)
+        val_data = BaseDataset(split="val",tokenizer=tokenizer, full_data=config['full_data'], transform=data_transform)
+        val_final_data = BaseDataset(split="val",tokenizer=tokenizer, full_data=config['full_data'], transform=data_transform)
 
-        # split train, val, val_final: 1.1M, 100K, 50K
-        n_val = round(len(data) * 0.08)
-        n_val_final = round(len(data) * 0.04)
-        n_train = len(data) - n_val - n_val_final
-
-        # fix split with random seed. Note that splits might still be different when using full dataset vs small dataset
-        train_data, val_data, val_final_data = torch.utils.data.random_split(data, [n_train, n_val, n_val_final],
-                                                                             generator=torch.Generator().manual_seed(42))
         test_data = BaseTestDataset(
             tokenizer=tokenizer, transform=data_transform)
 

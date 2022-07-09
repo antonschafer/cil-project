@@ -1,0 +1,11 @@
+nepochs: 10
+model: "base"
+run_name: "bert_base"
+save_dir: ""
+nepochs: 2
+val_check_interval: 1.0
+lr: 0.00002
+batch_size: 16
+accumulate_grad_batches: 1
+full_data: True
+debug: False
