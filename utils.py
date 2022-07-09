@@ -107,7 +107,7 @@ def get_base_datasets(config):
         tokenizer = AutoTokenizer.from_pretrained(config['tokenizer_name'])
         train_data = BaseDataset(split="train",tokenizer=tokenizer, full_data=config['full_data'], transform=data_transform)
         val_data = BaseDataset(split="val",tokenizer=tokenizer, full_data=config['full_data'], transform=data_transform)
-        val_final_data = BaseDataset(split="val",tokenizer=tokenizer, full_data=config['full_data'], transform=data_transform)
+        val_final_data = BaseDataset(split="val_final",tokenizer=tokenizer, full_data=config['full_data'], transform=data_transform)
 
         test_data = BaseTestDataset(
             tokenizer=tokenizer, transform=data_transform)
