@@ -232,14 +232,13 @@ def load_wandb_checkpoint(run_id, save_dir):
     return load_wandb_file("model.ckpt", run_id, save_dir)
 
 
-
 def load_wandb_file(fname, run_id, save_dir):
     """
     Load file from wandb
     """
     print("Loading {} from wandb...".format(fname))
     # download file
-    run_cache_dir = os.path.join(save_dir, "cache", "run_id")
+    run_cache_dir = os.path.join(save_dir, "cache", run_id)
     os.makedirs(run_cache_dir, exist_ok=True)
     return wandb.restore(
-        fname, run_path=WANDB_PROJECT_PATH + run_id, replace=True, root=run_cache_dir).name
+        fname, run_path=WANDB_PROJECT_PATH + run_id, root=run_cache_dir).name

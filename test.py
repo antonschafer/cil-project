@@ -11,12 +11,12 @@ from utils import get_base_datasets, get_bert_config, load_wandb_checkpoint
 def test(config, module):
     model = module(config=config)
 
-    # restore model weights
+    ckpt_path = None
     if config["save_path"] is not None:
-        model.load_ckpt(config['save_path'])
+        ckpt_path = config["save_path"]
     if config["run_id"] is not None:
-        model.load_ckpt(load_wandb_checkpoint(
-            config["run_id"], save_dir=config["save_dir"]))
+        ckpt_path = load_wandb_checkpoint(
+            config["run_id"], save_dir=config["save_dir"])
 
     if config["save_to_wandb"]:
         # make sure pred files are saved to correct run
@@ -38,7 +38,7 @@ def test(config, module):
         val_final_loader = DataLoader(
             val_final_set, batch_size=64, num_workers=4, pin_memory=True)
 
-    model.run_final_eval(trainer=trainer, val_loader=val_loader,
+    model.run_final_eval(trainer=trainer, ckpt_path=ckpt_path, val_loader=val_loader,
                          val_final_loader=val_final_loader, test_loader=test_loader, save_preds=config["save_to_wandb"])
 
 
@@ -54,7 +54,7 @@ if __name__ == '__main__':
                         help="save logs to wandb run")
     parser.add_argument('--test_only', action='store_true')
     parser.add_argument('--save_dir', type=str,
-                        default=os.path.join("/cluster/scratch", os.environ["USER"]))
+                        default=os.path.join("/cluster/scratch", os.environ["USER"]), help="where to save and cache files")
 
     args = parser.parse_args()
     config, module = get_bert_config(args)

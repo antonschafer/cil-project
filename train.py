@@ -23,7 +23,9 @@ def train(config, module):
     trainer.fit(model, train_loader, val_loader)
 
     model.run_final_eval(
-        trainer=trainer, val_loader=val_loader, val_final_loader=val_final_loader, test_loader=test_loader)
+        trainer=trainer, ckpt_path=trainer.checkpoint_callback.best_model_path,
+        val_loader=val_loader, val_final_loader=val_final_loader,
+        test_loader=test_loader)
 
 #   TODO change s.t. can use logged predictions
 #   try:

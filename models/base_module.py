@@ -97,24 +97,23 @@ class BaseModule(pl.LightningModule):
     def configure_optimizers(self):
         pass
 
-    # TODO solve cleaner
-    def run_final_eval(self, *, trainer, test_loader, val_loader=None, val_final_loader=None, save_preds=True):
+    # TODO solve cleaner, this is a hack (In separate function to take care of setting val set name)
+    def run_final_eval(self, *, trainer, ckpt_path, test_loader, val_loader=None, val_final_loader=None, save_preds=True):
         """
-        Run evaluation, save predictions
+        Run evaluation checkpoint, save predictions
         """
-        # In separate function to take care of setting val set name
         self._save_validation_preds = save_preds
 
         if val_loader is not None:
             self._val_set_name = "val"
-            trainer.validate(self, val_loader)
+            trainer.validate(self, val_loader, ckpt_path=ckpt_path)
 
         if val_final_loader is not None:
             self._val_set_name = "val_final"
-            trainer.validate(self, val_final_loader)
+            trainer.validate(self, val_final_loader, ckpt_path=ckpt_path)
 
-        trainer.test(self, test_loader)
+        trainer.test(self, test_loader, ckpt_path=ckpt_path)
 
         # reset to default configs
         self._val_set_name = "val"
-        self._save_validation_preds = save_preds
+        self._save_validation_preds = False
