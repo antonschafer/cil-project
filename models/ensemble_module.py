@@ -16,7 +16,7 @@ class EnsembleModule(BaseModule):
         self.prediction_head = nn.Sequential(
             nn.Dropout(config["dropout"]),
             nn.Linear(in_dim, config["hidden_size"]),
-            nn.BatchNorm1d(),
+            nn.BatchNorm1d(config["hidden_size"]),
             nn.LeakyReLU(),
             nn.Dropout(config["dropout"]),
             nn.Linear(config['hidden_size'], 1),
@@ -26,15 +26,14 @@ class EnsembleModule(BaseModule):
         return self.prediction_head(x)
 
     def preds_labels_loss(self, batch):
-        x, y_bin = batch
-        y = y_bin[:, 1]
-        logits = self(x)
+        x, y = batch
+        logits = self(x).view(-1)
         loss = F.binary_cross_entropy_with_logits(logits, y)
-        preds = torch.where(logits > 0, 1, 0)
-        return loss, preds, y
+        preds = torch.sigmoid(logits)
+        return preds, y, loss
 
     def preds(self, batch):
-        return (self(batch) > 0).cpu()
+        return torch.sigmoid(self(batch) > 0).view(-1).cpu()
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.config['lr'])
@@ -42,7 +41,8 @@ class EnsembleModule(BaseModule):
             "scheduler": optim.lr_scheduler.ReduceLROnPlateau(
                 optimizer, factor=0.1, patience=2, verbose=True,
             ),
-            "interval": "step",
+            "interval": "epoch",
             "frequency": 1,
+            "monitor": "val_loss"
         }
         return [optimizer], [lr_scheduler_config]

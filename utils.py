@@ -3,16 +3,16 @@ import pytorch_lightning as pl
 import hashlib
 import dill  # can pickle lambdas
 import torch
-from transformers import AutoTokenizer
+from transformers import AutoModel, AutoTokenizer
 import os
 import wandb
 import yaml
 import time
 import pandas as pd
 from datasets.base_dataset import BaseDataset
-from models.base_module import BaseModule
 from datasets.base_testdataset import BaseTestDataset
 from models.binary_hf_module import BinaryHFModule
+from models.embedding_module import EmbeddingModule
 from models.three_class_hf_module import ThreeClassHFModule
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
@@ -40,10 +40,25 @@ MODELS = {
         "module": ThreeClassHFModule,
         "data_transform": lambda x: x.replace("<user>", "@user").replace("<url>", "http"),
     },
+    "twitter_roberta_nonlatest": {
+        "model_name": "cardiffnlp/twitter-roberta-base-sentiment",
+        "tokenizer_name": "cardiffnlp/twitter-roberta-base-sentiment",
+        "module": ThreeClassHFModule,
+        "data_transform": lambda x: x.replace("<user>", "@user").replace("<url>", "http"),
+    },
     "twitter_xlm_roberta": {
         "model_name": "cardiffnlp/twitter-xlm-roberta-base-sentiment",
         "tokenizer_name": "cardiffnlp/twitter-xlm-roberta-base-sentiment",
         "module": ThreeClassHFModule,
+        "data_transform": lambda x: x.replace("<user>", "@user").replace("<url>", "http"),
+    },
+    # --------------------------------------------------------------------------------
+    # Models only for generating embeddings
+    # --------------------------------------------------------------------------------
+    "twitter_roberta_embeddings": {
+        "model_name": "cardiffnlp/twitter-roberta-base",
+        "tokenizer_name": "cardiffnlp/twitter-roberta-base",
+        "module": lambda _: AutoModel.from_pretrained("cardiffnlp/twitter-roberta-base"),
         "data_transform": lambda x: x.replace("<user>", "@user").replace("<url>", "http"),
     }
 }

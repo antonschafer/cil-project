@@ -1,51 +1,51 @@
-import argparse
-import os
+import warnings
 from torch.utils.data import DataLoader
-import wandb
-from models.binary_hf_module import BinaryHFModule
+from datasets.ensemble_dataset import EnsembleDataset
 from models.ensemble_module import EnsembleModule
-from models.three_class_hf_module import ThreeClassHFModule
+from test import run_eval
 
-from utils import get_base_arg_parser, get_base_datasets, get_trainer
-
-
-submodules = [
-    {"name": "base", "module": BinaryHFModule},
-    {"name": "twitter_roberta", "module": ThreeClassHFModule},
-    {"name": "twitter_xlm_roberta", "module": EnsembleModule},
-]
+from utils import get_base_arg_parser, get_trainer
 
 
 def train(config):
-    assert False, "Not implemented"
-    # Load checkpoint from wandb
+    val_set = EnsembleDataset(
+        runs=config["model_runs"], split="val", save_dir=config["save_dir"])
+    val_final_set = EnsembleDataset(
+        runs=config["model_runs"], split="val_final", save_dir=config["save_dir"])
+    test_set = EnsembleDataset(
+        runs=config["model_runs"], split="test", save_dir=config["save_dir"])
 
-    p_str = "cil-biggoodteam/twitter-sentiment-analysis/15catbfp"
-    m = wandb.restore('model.ckpt', run_path=p_str)
-
-    breakpoint()
-
-    # TODO add submodels and in_dim
-    model = EnsembleModule(config=config, submodels=None, in_dim=None)
+    model = EnsembleModule(config=config, in_dim=val_set.dim)
     trainer = get_trainer(config)
-    _, val_set, val_final_set, test_set = get_base_datasets(config)
 
-    train_loader = DataLoader(
-        val_set, batch_size=config['batch_size'], shuffle=True, drop_last=True, num_workers=1)
     val_loader = DataLoader(
+        val_set, batch_size=config['batch_size'], shuffle=True, drop_last=True, num_workers=1)
+    val_final_loader = DataLoader(
         val_final_set, batch_size=config['batch_size'], num_workers=1)
-    test_loader = DataLoader(
-        test_set, batch_size=config['batch_size'], num_workers=4)
 
-    trainer.fit(model, train_loader, val_loader)
-    trainer.test(model, test_loader)
+    trainer.fit(model, val_loader, val_dataloaders=val_final_loader)
+    run_eval(model, ckpt_path=trainer.checkpoint_callback.best_model_path,
+             val_set=None, val_final_set=val_final_set, test_set=test_set)
 
 
 if __name__ == '__main__':
 
     parser = get_base_arg_parser()
+    parser.add_argument("--model_runs", type=str,
+                        default=[], nargs="*")  # TODO default
+    parser.add_argument("--dropout", type=float,
+                        default=0.2)
+    parser.add_argument("--hidden_size", type=float,
+                        default=512)
+
     args = parser.parse_args()
     config = vars(args)
     print('Config:')
     print(config)
+
+    # we are using 1 worker and that's ok
+    warnings.filterwarnings("ignore", ".*does not have many workers.*")
+    # we don't want to be warned that awndb run dir where checkpoint is saved is not empty
+    warnings.filterwarnings("ignore", ".*exists and is not empty*")
+
     train(config)

@@ -30,17 +30,17 @@ class BaseModule(pl.LightningModule):
         """
         Returns prediction probabilities [0,1], labels {0,1}, and loss (not detached) for a batch.
         """
-        pass
+        raise NotImplementedError("Override this method in your model")
 
     def preds(self, batch):
         """
         Returns prediction probabilities [0,1]
         given a test batch w/o labels
         """
-        pass
+        raise NotImplementedError("Override this method in your model")
 
     def forward(self, x):
-        pass
+        raise NotImplementedError("Override this method in your model")
 
     def training_step(self, batch, batch_idx):
         preds, labels, loss = self.preds_labels_loss(batch)
@@ -101,4 +101,4 @@ class BaseModule(pl.LightningModule):
         np.save(os.path.join(wandb.run.dir, "test_preds.npy"), preds)
 
     def configure_optimizers(self):
-        pass
+        raise NotImplementedError("Override this method in your model")
