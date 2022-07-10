@@ -2,7 +2,8 @@ import argparse
 from torch.utils.data import DataLoader
 
 from utils import get_base_arg_parser, get_base_datasets, get_bert_config, compute_metrics, get_trainer
-from test import run_eval
+from test import TEST_BATCH_SIZE, run_eval
+import warnings
 
 
 def train(config, module):
@@ -15,7 +16,7 @@ def train(config, module):
     train_loader = DataLoader(
         train_set, batch_size=config['batch_size'], shuffle=True, drop_last=True, num_workers=1)
     val_loader = DataLoader(
-        val_set, batch_size=config['batch_size'], num_workers=1)
+        val_set, batch_size=TEST_BATCH_SIZE, num_workers=1)
 
     trainer.fit(model, train_loader, val_loader)
 
@@ -38,5 +39,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     config, module = get_bert_config(args)
+
+    # we are using 1 worker and that's ok
+    warnings.filterwarnings("ignore", ".*does not have many workers.*")
+    # we don't want to be warned that awndb run dir where checkpoint is saved is not empty
+    warnings.filterwarnings("ignore", ".*exists and is not empty*")
 
     train(config, module)

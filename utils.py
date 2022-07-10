@@ -64,8 +64,6 @@ def get_bert_config(args):
         config["save_dir"] = os.path.join(
             "/cluster/scratch", os.environ["USER"])
 
-    config["debug"] = args.debug
-
     # retrieve model info
     config["model_name"] = MODELS[config["model"]]["model_name"]
     config["tokenizer_name"] = MODELS[config["model"]]["tokenizer_name"]

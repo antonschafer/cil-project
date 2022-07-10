@@ -78,7 +78,7 @@ class BaseModule(pl.LightningModule):
         self.log("val_accuracy", acc)
 
         print("Validation Classification Report:")
-        print(classification_report(labels, bin_preds))
+        print(classification_report(labels, bin_preds, zero_division=0))
 
     def predict_step(self, batch, batch_idx):
         preds, labels, loss = self.preds_labels_loss(

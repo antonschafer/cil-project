@@ -1,17 +1,18 @@
 import argparse
 import os
+import warnings
 import numpy as np
 import pytorch_lightning as pl
-from pytorch_lightning.loggers import WandbLogger
 from sklearn.metrics import classification_report
-import torch
 from torch.utils.data import DataLoader
 import wandb
 from utils import get_base_datasets, get_bert_config, load_wandb_checkpoint
 
+TEST_BATCH_SIZE = 64
+
 
 def run_and_save_val(trainer, model, dataset, ckpt_path, split_name):
-    dataloader = DataLoader(dataset, batch_size=64,
+    dataloader = DataLoader(dataset, batch_size=TEST_BATCH_SIZE,
                             num_workers=1, pin_memory=True)
     outputs = trainer.predict(model, dataloader, ckpt_path=ckpt_path)
     preds, labels, loss = model.aggregate_outputs(outputs)
@@ -24,7 +25,7 @@ def run_and_save_val(trainer, model, dataset, ckpt_path, split_name):
     wandb.run.summary["best_{}_acc".format(split_name)] = correct_preds.mean()
 
     print("Model Checkpoint Classification Report on {} data:".format(split_name))
-    print(classification_report(labels, preds > 0.5))
+    print(classification_report(labels, preds > 0.5, zero_division=0))
 
 
 def run_eval(model, ckpt_path, val_set, val_final_set, test_set):
@@ -32,7 +33,7 @@ def run_eval(model, ckpt_path, val_set, val_final_set, test_set):
     run_and_save_val(trainer, model, val_set, ckpt_path, "val")
     run_and_save_val(trainer, model, val_final_set, ckpt_path, "val_final")
 
-    test_loader = DataLoader(test_set, batch_size=64,
+    test_loader = DataLoader(test_set, batch_size=TEST_BATCH_SIZE,
                              num_workers=1, pin_memory=True)
     trainer.test(model, test_loader, ckpt_path=ckpt_path)
 
@@ -86,5 +87,8 @@ if __name__ == '__main__':
     if config["run_id"] is None and config["save_to_wandb"]:
         raise ValueError(
             "Can only save to wandb if restoring from run_id")
+
+    # we are using 1 worker and that's ok
+    warnings.filterwarnings("ignore", ".*does not have many workers.*")
 
     test(config, module)
