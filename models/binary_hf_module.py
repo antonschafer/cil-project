@@ -19,10 +19,10 @@ class BinaryHFModule(BaseModule):
     def preds_labels_loss(self, batch):
         x, y = batch
         output = self.model(x, labels=y)
-        return output.logits.argmax(axis=1), y[:, 1], output.loss
+        return output.logits.softmax(axis=1)[:, 1], y[:, 1], output.loss
 
     def preds(self, batch):
-        return torch.argmax(self(batch), axis=1).cpu()
+        return torch.softmax(self(batch), axis=1)[:, 1].cpu()
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(self.parameters(), lr=self.config['lr'])

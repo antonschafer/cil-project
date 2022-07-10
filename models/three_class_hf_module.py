@@ -32,10 +32,10 @@ class ThreeClassHFModule(BaseModule):
         x, y = batch
         y = self.fix_labels(y)
         output = self.model(x, labels=y)
-        return output.logits[:, [0, 2]].argmax(axis=1), y[:, 2], output.loss
+        return output.logits[:, [0, 2]].softmax(axis=1)[:, 1], y[:, 2], output.loss
 
     def preds(self, batch):
-        return torch.argmax(self(batch), axis=1).cpu()
+        return torch.softmax(self(batch), axis=1)[:, 1].cpu()
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(self.parameters(), lr=self.config['lr'])
