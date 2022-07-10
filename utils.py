@@ -38,13 +38,13 @@ MODELS = {
         "model_name": "cardiffnlp/twitter-roberta-base-sentiment-latest",
         "tokenizer_name": "cardiffnlp/twitter-roberta-base-sentiment-latest",
         "module": ThreeClassHFModule,
-        "data_transform": lambda x: x.replace("<user>", "@user"),
+        "data_transform": lambda x: x.replace("<user>", "@user").replace("<url>", "http"),
     },
     "twitter_xlm_roberta": {
         "model_name": "cardiffnlp/twitter-xlm-roberta-base-sentiment",
         "tokenizer_name": "cardiffnlp/twitter-xlm-roberta-base-sentiment",
         "module": ThreeClassHFModule,
-        "data_transform": lambda x: x.replace("<user>", "@user"),
+        "data_transform": lambda x: x.replace("<user>", "@user").replace("<url>", "http"),
     }
 }
 
