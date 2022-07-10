@@ -33,7 +33,7 @@ class EnsembleModule(BaseModule):
         preds = torch.where(logits > 0, 1, 0)
         return loss, preds, y
 
-    def test_step(self, batch, batch_idx):
+    def preds(self, batch):
         return (self(batch) > 0).cpu()
 
     def configure_optimizers(self):

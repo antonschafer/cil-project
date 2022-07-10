@@ -1,11 +1,40 @@
 import argparse
 import os
-from numpy import save
+import numpy as np
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
+from sklearn.metrics import classification_report
+import torch
 from torch.utils.data import DataLoader
 import wandb
 from utils import get_base_datasets, get_bert_config, load_wandb_checkpoint
+
+
+def run_and_save_val(trainer, model, dataset, ckpt_path, split_name):
+    dataloader = DataLoader(dataset, batch_size=64,
+                            num_workers=1, pin_memory=True)
+    outputs = trainer.predict(model, dataloader, ckpt_path=ckpt_path)
+    preds, labels, loss = model.aggregate_outputs(outputs)
+    correct_preds = (preds > 0.5) == labels
+    np.save(os.path.join(wandb.run.dir),
+            "{}_preds.npy".format(split_name), preds)
+    np.save(os.path.join(wandb.run.dir),
+            "{}_correct_preds.npy".format(split_name), correct_preds)
+    wandb.run.summary["best_{}_loss".format(split_name)] = loss
+    wandb.run.summary["best_{}_acc".format(split_name)] = correct_preds.mean()
+
+    print("Model Checkpoint Classification Report on {} data:".format(split_name))
+    print(classification_report(labels, preds > 0.5))
+
+
+def run_eval(model, ckpt_path, val_set, val_final_set, test_set):
+    trainer = pl.Trainer(accelerator="auto", max_epochs=1)
+    run_and_save_val(trainer, model, val_set, ckpt_path, "val")
+    run_and_save_val(trainer, model, val_final_set, ckpt_path, "val_final")
+
+    test_loader = DataLoader(test_set, batch_size=64,
+                             num_workers=1, pin_memory=True)
+    trainer.test(model, test_loader, ckpt_path=ckpt_path)
 
 
 def test(config, module):
@@ -19,27 +48,14 @@ def test(config, module):
             config["run_id"], save_dir=config["save_dir"])
 
     if config["save_to_wandb"]:
-        # make sure pred files are saved to correct run
-        trainer = pl.Trainer(accelerator="auto", logger=WandbLogger(
-            id=config["run_id"], save_dir=config["save_dir"], project="twitter-sentiment-analysis", resume="must"))
+        wandb.init(project="twitter-sentiment-analysis",
+                   dir=config["save_dir"], id=config["run_id"], resume="must")
     else:
-        wandb.init()
         os.environ["WANDB_MODE"] = "dryrun"
-        trainer = pl.Trainer(accelerator="auto")
+        wandb.init()
 
     _, val_set, val_final_set, test_set = get_base_datasets(config)
-    test_loader = DataLoader(test_set, batch_size=64,
-                             num_workers=4, pin_memory=True)
-    if config["test_only"]:
-        val_loader, val_final_loader = None, None
-    else:
-        val_loader = DataLoader(val_set, batch_size=64,
-                                num_workers=4, pin_memory=True)
-        val_final_loader = DataLoader(
-            val_final_set, batch_size=64, num_workers=4, pin_memory=True)
-
-    model.run_final_eval(trainer=trainer, ckpt_path=ckpt_path, val_loader=val_loader,
-                         val_final_loader=val_final_loader, test_loader=test_loader, save_preds=config["save_to_wandb"])
+    run_eval(model, ckpt_path, val_set, val_final_set, test_set)
 
 
 if __name__ == '__main__':

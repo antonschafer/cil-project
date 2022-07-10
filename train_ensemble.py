@@ -17,6 +17,7 @@ submodules = [
 
 
 def train(config):
+    assert False, "Not implemented"
     # Load checkpoint from wandb
 
     p_str = "cil-biggoodteam/twitter-sentiment-analysis/15catbfp"

@@ -20,10 +20,6 @@ class BaseModule(pl.LightningModule):
         self.config = config
         self.model = None
 
-        # for hack to run val_final and val set and log correct name
-        self._val_set_name = "val"
-        self._save_preds = False
-
     def load_ckpt(self, path):
         model_dict = torch.load(path)['state_dict']
         model_dict = {k.replace('model.', ''): v for k,
@@ -33,6 +29,13 @@ class BaseModule(pl.LightningModule):
     def preds_labels_loss(self, batch):
         """
         Returns prediction probabilities [0,1], labels {0,1}, and loss (not detached) for a batch.
+        """
+        pass
+
+    def preds(self, batch):
+        """
+        Returns prediction probabilities [0,1]
+        given a test batch w/o labels
         """
         pass
 
@@ -56,33 +59,38 @@ class BaseModule(pl.LightningModule):
             "loss": loss.item()
         }
 
-    def validation_epoch_end(self, outputs):
+    @staticmethod
+    def aggregate_outputs(outputs):
         def aggregate(metric):
             return np.array([x for xs in outputs for x in xs[metric]])
-
-        # log with correct name (val_final set vs val set)
-        def log_metric(metric, value):
-            self.log("{}_{}".format(self._val_set_name, metric), value)
 
         preds = aggregate("preds")
         labels = aggregate("labels")
         loss = np.mean([x["loss"] for x in outputs])
-        correct_preds = (preds > 0.5) == labels
+        return preds, labels, loss
 
-        log_metric("loss", loss)
-        log_metric("accuracy", correct_preds.mean())
+    def validation_epoch_end(self, outputs):
+        preds, labels, loss = self.aggregate_outputs(outputs)
+        bin_preds = preds > 0.5
+        acc = np.mean(bin_preds == labels)
 
-        print("Classification Report {} set:".format(self._val_set_name))
-        print(classification_report(labels, preds > 0.5))
+        self.log("val_loss", loss)
+        self.log("val_accuracy", acc)
 
-        if self._save_validation_preds:
-            np.save(os.path.join(wandb.run.dir,
-                    "{}_preds.npy".format(self._val_set_name)), preds)
-            np.save(os.path.join(wandb.run.dir,
-                    "{}_correct_preds.npy".format(self._val_set_name)), correct_preds)
+        print("Validation Classification Report:")
+        print(classification_report(labels, bin_preds))
+
+    def predict_step(self, batch, batch_idx):
+        preds, labels, loss = self.preds_labels_loss(
+            batch)
+        return {
+            "preds": preds.tolist(),
+            "labels": labels.tolist(),
+            "loss": loss.item()
+        }
 
     def test_step(self, batch, batch_idx):
-        pass
+        return self.preds(batch)
 
     def test_epoch_end(self, outputs):
         preds = np.concatenate(outputs)
@@ -90,30 +98,7 @@ class BaseModule(pl.LightningModule):
         ids = np.arange(1, outputs.shape[0]+1)
         outdf = pd.DataFrame({"Id": ids, 'Prediction': outputs})
         outdf.to_csv(os.path.join(wandb.run.dir, "output.csv"), index=False)
-
-        if self._save_preds:
-            np.save(os.path.join(wandb.run.dir, "test_preds.npy"), preds)
+        np.save(os.path.join(wandb.run.dir, "test_preds.npy"), preds)
 
     def configure_optimizers(self):
         pass
-
-    # TODO solve cleaner, this is a hack (In separate function to take care of setting val set name)
-    def run_final_eval(self, *, trainer, ckpt_path, test_loader, val_loader=None, val_final_loader=None, save_preds=True):
-        """
-        Run evaluation checkpoint, save predictions
-        """
-        self._save_validation_preds = save_preds
-
-        if val_loader is not None:
-            self._val_set_name = "val"
-            trainer.validate(self, val_loader, ckpt_path=ckpt_path)
-
-        if val_final_loader is not None:
-            self._val_set_name = "val_final"
-            trainer.validate(self, val_final_loader, ckpt_path=ckpt_path)
-
-        trainer.test(self, test_loader, ckpt_path=ckpt_path)
-
-        # reset to default configs
-        self._val_set_name = "val"
-        self._save_validation_preds = False

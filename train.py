@@ -2,6 +2,7 @@ import argparse
 from torch.utils.data import DataLoader
 
 from utils import get_base_arg_parser, get_base_datasets, get_bert_config, compute_metrics, get_trainer
+from test import run_eval
 
 
 def train(config, module):
@@ -15,17 +16,11 @@ def train(config, module):
         train_set, batch_size=config['batch_size'], shuffle=True, drop_last=True, num_workers=1)
     val_loader = DataLoader(
         val_set, batch_size=config['batch_size'], num_workers=1)
-    val_final_loader = DataLoader(
-        val_final_set, batch_size=config['batch_size'], num_workers=1)
-    test_loader = DataLoader(
-        test_set, batch_size=config['batch_size'], num_workers=4)
 
     trainer.fit(model, train_loader, val_loader)
 
-    model.run_final_eval(
-        trainer=trainer, ckpt_path=trainer.checkpoint_callback.best_model_path,
-        val_loader=val_loader, val_final_loader=val_final_loader,
-        test_loader=test_loader)
+    run_eval(model, ckpt_path=trainer.checkpoint_callback.best_model_path,
+             val_set=val_set, val_final_set=val_final_set, test_set=test_set)
 
 #   TODO change s.t. can use logged predictions
 #   try:

@@ -34,7 +34,7 @@ class ThreeClassHFModule(BaseModule):
         output = self.model(x, labels=y)
         return output.logits[:, [0, 2]].argmax(axis=1), y[:, 2], output.loss
 
-    def test_step(self, batch, batch_idx):
+    def preds(self, batch):
         return torch.argmax(self(batch), axis=1).cpu()
 
     def configure_optimizers(self):
