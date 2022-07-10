@@ -103,7 +103,7 @@ def get_base_datasets(config):
 
     # check if can load from cache
     option_str = "_".join(
-        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform))])
+        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform)), "v2"])
     cache_dir = os.path.join(config["save_dir"], "cache")
     os.makedirs(cache_dir, exist_ok=True)
     cache_file = os.path.join(cache_dir, option_str + ".pkl")
