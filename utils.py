@@ -12,7 +12,6 @@ import pandas as pd
 from datasets.base_dataset import BaseDataset
 from datasets.base_testdataset import BaseTestDataset
 from models.binary_hf_module import BinaryHFModule
-from models.embedding_module import EmbeddingModule
 from models.three_class_hf_module import ThreeClassHFModule
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
