@@ -17,10 +17,10 @@ def run_and_save_val(trainer, model, dataset, ckpt_path, split_name):
     outputs = trainer.predict(model, dataloader, ckpt_path=ckpt_path)
     preds, labels, loss = model.aggregate_outputs(outputs)
     correct_preds = (preds > 0.5) == labels
-    np.save(os.path.join(wandb.run.dir),
-            "{}_preds.npy".format(split_name), preds)
-    np.save(os.path.join(wandb.run.dir),
-            "{}_correct_preds.npy".format(split_name), correct_preds)
+    np.save(os.path.join(wandb.run.dir,
+            "{}_preds.npy".format(split_name)), preds)
+    np.save(os.path.join(wandb.run.dir,
+            "{}_correct_preds.npy".format(split_name)), correct_preds)
     wandb.run.summary["best_{}_loss".format(split_name)] = loss
     wandb.run.summary["best_{}_acc".format(split_name)] = correct_preds.mean()
 
