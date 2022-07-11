@@ -35,7 +35,7 @@ if __name__ == '__main__':
                         default=[], nargs="*")  # TODO default
     parser.add_argument("--dropout", type=float,
                         default=0.2)
-    parser.add_argument("--hidden_size", type=float,
+    parser.add_argument("--hidden_size", type=int,
                         default=512)
 
     args = parser.parse_args()
