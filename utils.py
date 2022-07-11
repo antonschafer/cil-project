@@ -223,7 +223,7 @@ def get_base_arg_parser():
 
     parser.add_argument('--nepochs', type=int, default=1)
     # to validate only once per epoch, use 1.0 (not 1)
-    parser.add_argument('--val_check_interval', type=int, default=0.25)
+    parser.add_argument('--val_check_interval', type=float, default=0.25)
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--accumulate_grad_batches', type=int, default=1)
