@@ -1,5 +1,6 @@
-import argparse
+import os
 from torch.utils.data import DataLoader
+import wandb
 
 from utils import get_base_arg_parser, get_base_datasets, get_bert_config, compute_metrics, get_trainer
 from test import TEST_BATCH_SIZE, run_eval
@@ -20,8 +21,15 @@ def train(config, module):
 
     trainer.fit(model, train_loader, val_loader)
 
-    run_eval(model, ckpt_path=trainer.checkpoint_callback.best_model_path,
-             val_set=val_set, val_final_set=val_final_set, test_set=test_set)
+    if config["nepochs"] == 0:
+        # use model as is if no training, useful to directly evaluate pretrained HF models
+        ckpt_path = os.path.join(wandb.run.dir, "model.ckpt")
+        trainer.save_checkpoint(ckpt_path)
+        assert (not config["debug"]) and (config["full_data"]), "log only if using full data"
+    else:
+        ckpt_path = trainer.checkpoint_callback.best_model_path
+
+    run_eval(model, ckpt_path=ckpt_path, val_set=val_set, val_final_set=val_final_set, test_set=test_set)
 
 #   TODO change s.t. can use logged predictions
 #   try:
@@ -36,6 +44,7 @@ if __name__ == '__main__':
 
     parser = get_base_arg_parser()
     parser.add_argument('--model', type=str, default='base')
+    parser.add_argument('--log_only', action='store_true', help="only evaluate and log to wandb, skip training. useful for pretrained HF models")
 
     args = parser.parse_args()
     config, module = get_bert_config(args)
