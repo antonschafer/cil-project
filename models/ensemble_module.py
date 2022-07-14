@@ -33,7 +33,7 @@ class EnsembleModule(BaseModule):
         return preds, y, loss
 
     def preds(self, batch):
-        return torch.sigmoid(self(batch) > 0).view(-1).cpu()
+        return torch.sigmoid(self(batch)).view(-1).cpu()
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.config['lr'])
