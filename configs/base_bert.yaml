@@ -9,5 +9,3 @@ batch_size: 16
 accumulate_grad_batches: 1
 full_data: True
 debug: False
-train_data_size: 1
-seed: 0
