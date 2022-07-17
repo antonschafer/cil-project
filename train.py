@@ -43,9 +43,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     config, module = get_bert_config(args)
 
-    np.random.seed(config['seed'])
-    torch.manual_seed(config['seed'])
-
 
     # we are using 1 worker and that's ok
     warnings.filterwarnings("ignore", ".*does not have many workers.*")
