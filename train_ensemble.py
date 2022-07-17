@@ -8,7 +8,6 @@ from utils import get_base_arg_parser, get_trainer
 
 
 def train(config):
-    config["save_dir"] = ''
     val_set = EnsembleDataset(
         runs=config["model_runs"], split="val", save_dir=config["save_dir"])
     val_final_set = EnsembleDataset(
