@@ -3,18 +3,21 @@ import torch
 import pandas as pd
 
 class BaseDataset(Dataset):
-    def __init__(self, split, tokenizer, full_data=True, transform=None):
+    def __init__(self, split, tokenizer, full_data=True, transform=None, train_data_size=None):
         super().__init__()
         self.split = split
         self.full_data = full_data
         self.tokenizer = tokenizer
         self.transform = transform
+        self.train_data_size = train_data_size
         self.load_data()
         self.data, self.labels = self.preprocess_data()
 
     def load_data(self):
         filename = "./twitter-datasets/" + ("full_" if self.full_data else "small_") + self.split+".csv"
         self.df = pd.read_csv(filename)
+        if self.transform is not None:
+            self.df = self.df.sample(int(self.df.shape[0] * self.train_data_size))
         
 
     def preprocess_data(self):

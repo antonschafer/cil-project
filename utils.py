@@ -130,7 +130,7 @@ def get_base_datasets(config):
         # build datasets
         tokenizer = AutoTokenizer.from_pretrained(config['tokenizer_name'])
         train_data = BaseDataset(split="train", tokenizer=tokenizer,
-                                 full_data=config['full_data'], transform=data_transform)
+                                 full_data=config['full_data'], transform=data_transform, train_data_size=config['train_data_size'])
         val_data = BaseDataset(split="val", tokenizer=tokenizer,
                                full_data=config['full_data'], transform=data_transform)
         val_final_data = BaseDataset(
@@ -147,19 +147,6 @@ def get_base_datasets(config):
         return train_data, val_data, val_final_data, test_data
 
 
-def compute_metrics(model, val_set, batch_size, name):
-    model = model.eval().to(device)
-    t = 0
-    data = val_set.dataset.data.to(device)
-    preds = []
-    while t < data.shape[0]:
-        preds += model(data[t: t + batch_size]).argmax(axis=1).tolist()
-        t += batch_size
-    if name is None:
-        name = str(time.time())
-    pd.DataFrame(torch.Tensor(val_set.dataset.labels.argmax(axis=1).tolist()) == torch.Tensor(
-        preds)).to_csv('statistics/' + str(name) + '.csv', header=None, index=False)
-    merge_metrics()
 
 
 def merge_metrics():

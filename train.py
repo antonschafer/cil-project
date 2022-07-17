@@ -2,10 +2,11 @@ import os
 from torch.utils.data import DataLoader
 import wandb
 
-from utils import get_base_arg_parser, get_base_datasets, get_bert_config, compute_metrics, get_trainer
+from utils import get_base_arg_parser, get_base_datasets, get_bert_config, get_trainer
 from test import TEST_BATCH_SIZE, run_eval
 import warnings
-
+import numpy as np
+import torch
 
 def train(config, module):
     model = module(config=config)
@@ -31,13 +32,6 @@ def train(config, module):
 
     run_eval(model, ckpt_path=ckpt_path, val_set=val_set, val_final_set=val_final_set, test_set=test_set)
 
-#   TODO change s.t. can use logged predictions
-#   try:
-#         compute_metrics(
-#             model, val_set, config['batch_size'], config["run_name"])
-#     except:
-#         pass
-#
 
 
 if __name__ == '__main__':
@@ -48,6 +42,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     config, module = get_bert_config(args)
+
+    np.random.seed(config['seed'])
+    torch.manual_seed(config['seed'])
+
 
     # we are using 1 worker and that's ok
     warnings.filterwarnings("ignore", ".*does not have many workers.*")
