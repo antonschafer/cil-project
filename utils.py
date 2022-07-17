@@ -213,6 +213,9 @@ def get_base_arg_parser():
     parser.add_argument('--val_check_interval', type=float, default=0.25)
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--batch_size', type=int, default=16)
+    parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--train_data_size', type=float, default=1)
+
     parser.add_argument('--accumulate_grad_batches', type=int, default=1)
     parser.add_argument('--es_patience', type=int, default=3,
                         help="early stopping patience")
