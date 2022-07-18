@@ -42,6 +42,10 @@ def split_csv_small():
     df_val = df[train_size: train_size+val_size]
     df_val_final = df[train_size+val_size:]
 
+    df_train = df_train[ ~ df_train["texts"].isin(df_val["texts"])]
+    df_train = df_train[ ~ df_train["texts"].isin(df_val_final["texts"])]
+    df_val = df_val[ ~ df_val["texts"].isin(df_val_final["texts"])]
+
     print("Train shape",df_train.shape)
     print("Val shape",df_val.shape)
     print("val final shape",df_val_final.shape)
@@ -74,6 +78,9 @@ def split_csv_full():
     df_val = df[train_size: train_size+val_size]
     df_val_final = df[train_size+val_size:]
 
+    df_train = df_train[ ~ df_train["texts"].isin(df_val["texts"])]
+    df_train = df_train[ ~ df_train["texts"].isin(df_val_final["texts"])]
+    df_val = df_val[ ~ df_val["texts"].isin(df_val_final["texts"])]
     print("Train shape",df_train.shape)
     print("Val shape",df_val.shape)
     print("val final shape",df_val_final.shape)
