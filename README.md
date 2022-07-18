@@ -7,6 +7,13 @@
     - `conda activate cil`
     - `conda install pip`
 3. install packages `pip install -r requirements.txt`
-4. Login to wandb: wandb login
-5. Run experiments, e.g. `bsub -R "rusage[mem=32000,ngpus_excl_p=1]" -W 12:00 bash sample_job.sh`
-    - for interactive job run e.g `bsub -R "rusage[mem=32000,ngpus_excl_p=1]" -Ip bash`
+4. create datasplit `python create_splits.py`
+5. Login to wandb: wandb login
+6. Run experiments, e.g. `bsub -R "rusage[mem=48000,ngpus_excl_p=1]" -W 24:00 bash sample_job.sh`
+    - for interactive job run e.g `bsub -R "rusage[mem=48000,ngpus_excl_p=1]" -Ip bash` (then for setup `source setup.sh`)
+
+
+## Run ensemble:
+1. Make sure all runs you want to use as submodels have val_preds.npy, val_final_preds.npy, and test_preds.npy files. If they don't exist for a particular run with a model, run `python -m test --model ... --run_id ...  --save_to_wandb` to generate them.
+2. Include embeddings by including a run where embeddings were predicted (e.g. run 1oy7w4gu)
+3. Get the run ids of all runs you want to use and run via e.g.: `python -m train_ensemble --nepochs 50 --dropout 0.2 --hidden_size 512 --batch_size 64 --lr 0.001 --val_check_interval 1.0 --es_patience 5 --model_runs 1oy7w4gu 119ihalu 2zkvveys --run_name ensemble-example`

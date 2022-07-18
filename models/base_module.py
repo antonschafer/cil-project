@@ -1,24 +1,24 @@
 import os
-from statistics import mode
-import pytorch_lightning as pl
-from torch.nn import functional as F
-from torch import optim
-from transformers import AutoModelForSequenceClassification
-import torch
 import pandas as pd
+import pytorch_lightning as pl
+import torch
 import numpy as np
 from sklearn.metrics import classification_report
 import wandb
 
 
 class BaseModule(pl.LightningModule):
+    """
+    BaseModule for task, superclass for all models that automates logging etc
+
+    To implement: init, preds_labels_loss, forward, test_step, configure_optimizers
+    """
 
     def __init__(self, config):
         super().__init__()
         self.save_hyperparameters()
         self.config = config
-        self.model = AutoModelForSequenceClassification.from_pretrained(config['model_name'], num_labels=2,
-                                                                        ignore_mismatched_sizes=True)
+        self.model = None
 
     def load_ckpt(self, path):
         model_dict = torch.load(path)['state_dict']
@@ -26,59 +26,79 @@ class BaseModule(pl.LightningModule):
                       v in model_dict.items() if 'model' in k}
         self.model.load_state_dict(model_dict)
 
+    def preds_labels_loss(self, batch):
+        """
+        Returns prediction probabilities [0,1], labels {0,1}, and loss (not detached) for a batch.
+        """
+        raise NotImplementedError("Override this method in your model")
+
+    def preds(self, batch):
+        """
+        Returns prediction probabilities [0,1]
+        given a test batch w/o labels
+        """
+        raise NotImplementedError("Override this method in your model")
+
     def forward(self, x):
-        # x should be a dictionnary with at least a key input_ids
-        return self.model(x).logits
+        raise NotImplementedError("Override this method in your model")
 
     def training_step(self, batch, batch_idx):
-        x, y = batch
-        output = self.model(x, labels=y)
-        self.log("train_loss", output.loss.item(), on_step=True,
+        preds, labels, loss = self.preds_labels_loss(batch)
+        self.log("train_loss", loss.item(), on_step=True,
                  on_epoch=True, prog_bar=True, logger=True)
-        accuracy = (output.logits.argmax(axis=1) == y[:, 1]).float().mean()
-        self.log("train_accuracy", accuracy, on_step=True,
+        self.log("train_accuracy", ((preds > 0.5) == labels).float().mean(), on_step=True,  # TODO check train acc correct
                  on_epoch=True, prog_bar=True, logger=True)
-        return output.loss
+        return loss
 
     def validation_step(self, batch, batch_idx):
-        x, y = batch
-        output = self.model(x, labels=y)
-
+        preds, labels, loss = self.preds_labels_loss(
+            batch)
         return {
-            "preds": output.logits.argmax(axis=1).tolist(),
-            "labels": y[:, 1].tolist(),
-            "loss": output.loss.item()
+            "preds": preds.tolist(),
+            "labels": labels.tolist(),
+            "loss": loss.item()
         }
 
-    def validation_epoch_end(self, outputs):
+    @staticmethod
+    def aggregate_outputs(outputs):
         def aggregate(metric):
-            return [x for xs in outputs for x in xs[metric]]
+            return np.array([x for xs in outputs for x in xs[metric]])
 
         preds = aggregate("preds")
         labels = aggregate("labels")
         loss = np.mean([x["loss"] for x in outputs])
+        return preds, labels, loss
+
+    def validation_epoch_end(self, outputs):
+        preds, labels, loss = self.aggregate_outputs(outputs)
+        bin_preds = preds > 0.5
+        acc = np.mean(bin_preds == labels)
 
         self.log("val_loss", loss)
-        self.log("val_accuracy", np.mean(preds == labels))
+        self.log("val_accuracy", acc)
 
         print("Validation Classification Report:")
-        print(classification_report(labels, preds))
+        print(classification_report(labels, bin_preds, zero_division=0))
+
+    def predict_step(self, batch, batch_idx):
+        preds, labels, loss = self.preds_labels_loss(
+            batch)
+        return {
+            "preds": preds.tolist(),
+            "labels": labels.tolist(),
+            "loss": loss.item()
+        }
 
     def test_step(self, batch, batch_idx):
-        x = batch
-        logits = self(x)
-        return logits
+        return self.preds(batch)
 
     def test_epoch_end(self, outputs):
-        test_outputs = torch.vstack(outputs).cpu().numpy()
-        test_outputs = test_outputs.argmax(axis=1)
-        test_outputs[test_outputs == 0] = -1
-        ids = np.arange(1, test_outputs.shape[0]+1)
-        outdf = pd.DataFrame({"Id": ids, 'Prediction': test_outputs})
-        outdf.to_csv(os.path.join(wandb.run.dir, 'output.csv'), index=False)
+        preds = np.concatenate(outputs)
+        outputs = np.where(preds > 0.5, 1, -1)
+        ids = np.arange(1, outputs.shape[0]+1)
+        outdf = pd.DataFrame({"Id": ids, 'Prediction': outputs})
+        outdf.to_csv(os.path.join(wandb.run.dir, "output.csv"), index=False)
+        np.save(os.path.join(wandb.run.dir, "test_preds.npy"), preds)
 
     def configure_optimizers(self):
-        optimizer = optim.AdamW(self.parameters(), lr=self.config['lr'])
-        lr_scheduler = optim.lr_scheduler.MultiStepLR(
-            optimizer, milestones=[1, 2], gamma=0.1)
-        return [optimizer], [lr_scheduler]
+        raise NotImplementedError("Override this method in your model")
