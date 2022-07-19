@@ -23,6 +23,7 @@ def get_embeddings(model, dataset, has_labels):
             x = x.to(device)
             out = model(x)
             # not using pooler output as "were not initialized from the model checkpoint at cardiffnlp/twitter-xlm-roberta-base and are newly initialized"
+            print(out["last_hidden_state"].shape)
             cls_embedding = out["last_hidden_state"][:, 0]
             embeddings.append(cls_embedding.detach().cpu())
     return torch.cat(embeddings, dim=0).numpy()

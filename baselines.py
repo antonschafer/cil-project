@@ -76,10 +76,6 @@ def run_glove(config):
     wandb.init(project="glove")
 
     train_data, val_data, val_final_data, test_data = load_data(config["full_data"])
-    nltk.download('omw-1.4')
-    nltk.download('stopwords')
-    nltk.download('wordnet')
-
     stopwords = nltk.corpus.stopwords.words('english')
 
 
@@ -95,8 +91,6 @@ def run_glove(config):
     val_data_glove = texts_to_glove(val_data["texts_clean"],glove)
     val_final_data_glove = texts_to_glove(val_final_data["texts_clean"],glove)
     test_data_glove = texts_to_glove(test_data_clean,glove)
-
-    
 
     maxlen = 104
     train_data_glove = tf.keras.preprocessing.sequence.pad_sequences(train_data_glove, maxlen=maxlen)
