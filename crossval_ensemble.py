@@ -38,7 +38,7 @@ def cross_val(config):
 
         model = EnsembleModule(config=config, in_dim=val_set.dim)
         trainer = get_trainer(config)
-        trainer.fit(model, train_x_loader, val_dataloaders=[val_x_loader, val_final_loader])
+        trainer.fit(model, train_x_loader, val_dataloaders=(val_final_loader, val_x_loader))
         run_eval(model, ckpt_path=trainer.checkpoint_callback.best_model_path,
                 val_set=None, val_final_set=val_final_set, test_set=test_set)
 
@@ -54,6 +54,7 @@ if __name__ == '__main__':
                         default=512)
     parser.add_argument("--crossval_num", type=int,
                         default=5)
+
 
     args = parser.parse_args()
     config = vars(args)
