@@ -136,8 +136,7 @@ def run_glove(config):
     valfinal_preds = np.squeeze(valfinal_preds)
     val_final_acc = preds_metrics(valfinal_preds,val_final_data["labels"])
 
-    wandb.log({"train_acc": train_acc,"val_acc": val_acc,"val_final_acc": val_final_acc})
-    wandb.summary["train_acc"] = train_acc
+    wandb.log({"val_acc": val_acc,"val_final_acc": val_final_acc})
     wandb.summary["val_acc"] = val_acc
     wandb.summary["val_final_acc"] = val_final_acc
     

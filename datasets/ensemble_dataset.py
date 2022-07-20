@@ -22,7 +22,7 @@ class EnsembleDataset(Dataset):
         feature_list = []
         for run_id in runs:
             run_feats = np.float32(np.load(load_wandb_file(
-                "{}_preds.npy".format(split), run_id, save_dir)))
+                "{}_embeddings.npy".format(split), run_id, save_dir)))
             if len(run_feats.shape) == 1:  # fix single dim arrays for concatenating
                 run_feats = run_feats.reshape(-1, 1)
             feature_list.append(run_feats)

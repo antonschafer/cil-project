@@ -21,10 +21,12 @@ def get_embeddings(model, dataset, has_labels):
         for batch in tqdm(dataloader):
             x = batch[0] if has_labels else batch
             x = x.to(device)
-            out = model(x)
+            out = model.model(x)
             # not using pooler output as "were not initialized from the model checkpoint at cardiffnlp/twitter-xlm-roberta-base and are newly initialized"
-            print(out["last_hidden_state"].shape)
-            cls_embedding = out["last_hidden_state"][:, 0]
+            if "last_hidden_states" in out.keys():
+                cls_embedding = out["last_hidden_states"][:, 0]
+            else:
+                cls_embedding = out["hidden_states"][-1][:, 0]
             embeddings.append(cls_embedding.detach().cpu())
     return torch.cat(embeddings, dim=0).numpy()
 
@@ -43,15 +45,15 @@ def save_embeddings(config, module):
     _, val_set, val_final_set, test_set = get_base_datasets(config)
 
     val_embeddings = get_embeddings(model, val_set, has_labels=True)
-    np.save(os.path.join(wandb.run.dir, "val_preds.npy"), val_embeddings)
+    np.save(os.path.join(wandb.run.dir, "val_embeddings.npy"), val_embeddings)
 
     val_final_embeddings = get_embeddings(
         model, val_final_set, has_labels=True)
-    np.save(os.path.join(wandb.run.dir, "val_final_preds.npy"),
+    np.save(os.path.join(wandb.run.dir, "val_final_embeddings.npy"),
             val_final_embeddings)
 
     test_embeddings = get_embeddings(model, test_set, has_labels=False)
-    np.save(os.path.join(wandb.run.dir, "test_preds.npy"), test_embeddings)
+    np.save(os.path.join(wandb.run.dir, "test_embeddings.npy"), test_embeddings)
 
 
 if __name__ == '__main__':
@@ -72,6 +74,7 @@ if __name__ == '__main__':
     # always generate for full dataset
     config["full_data"] = True
 
+    config["output_hidden_states"] = True
     # we are using 1 worker and that's ok
     warnings.filterwarnings("ignore", ".*does not have many workers.*")
 
