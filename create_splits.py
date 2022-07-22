@@ -17,7 +17,8 @@ np.random.seed(0)
 
 def read_txt(filename):
     with open(filename) as f:
-        data = f.readlines()
+        data = f.read().split("\n")
+        data = [x for x in data if x != ""]
     return set(data)
 
 def split_csv_small():

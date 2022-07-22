@@ -56,7 +56,7 @@ MODELS = {
         "module": ThreeClassHFModule,
         "data_transform": lambda x: x.replace("<user>", "@user").replace("<url>", "http"),
     },
-    "bert-emotion": {
+    "distilbert_emotion": {
         "model_name": "bhadresh-savani/distilbert-base-uncased-emotion",
         "tokenizer_name": "bhadresh-savani/distilbert-base-uncased-emotion",
         "module": BinaryHFModule,
@@ -135,7 +135,7 @@ def get_base_datasets(config):
 
     # check if can load from cache
     option_str = "_".join(
-        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform)), str(config["seed"]), str(config["train_data_size"]), "v4"])
+        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform)), str(config["seed"]), str(config["train_data_size"]), "v5"])
     cache_dir = os.path.join(config["save_dir"], "cache")
     os.makedirs(cache_dir, exist_ok=True)
     cache_file = os.path.join(cache_dir, option_str + ".pkl")
