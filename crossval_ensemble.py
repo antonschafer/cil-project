@@ -24,6 +24,8 @@ def cross_val(config):
     indices = list(range(len(val_set)))
 
     for i in range(config["crossval_num"]):
+        print("-"*50 + "\nStarting X-VAL {}".format(i) + "\n"+"-"*50)
+
         indices_val_x = indices[math.floor(len(val_set)*(i/config["crossval_num"])): math.ceil(len(val_set)*((i+1)/config["crossval_num"]))]
         indices_train_x = [idx for idx in indices if idx not in indices_val_x]
         assert (len(indices_val_x) + len(indices_train_x)) == len(indices)
@@ -38,6 +40,7 @@ def cross_val(config):
 
         model = EnsembleModule(config=config, in_dim=val_set.dim)
         trainer = get_trainer(config)
+
         trainer.fit(model, train_x_loader, val_dataloaders=(val_final_loader, val_x_loader))
         run_eval(model, ckpt_path=trainer.checkpoint_callback.best_model_path,
                 val_set=None, val_final_set=val_final_set, test_set=test_set)
