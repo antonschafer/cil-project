@@ -9,6 +9,11 @@ import wandb
 import yaml
 import time
 import pandas as pd
+import re
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+from nltk.tokenize import TweetTokenizer
 from datasets.base_dataset import BaseDataset
 from datasets.base_testdataset import BaseTestDataset
 from models.binary_hf_module import BinaryHFModule
@@ -244,3 +249,26 @@ def load_wandb_file(fname, run_id, save_dir):
     os.makedirs(run_cache_dir, exist_ok=True)
     return wandb.restore(
         fname, run_path=WANDB_PROJECT_PATH + run_id, root=run_cache_dir).name
+
+def run_preprocessing(input_tokens):
+     """
+     Perform basic preprocessing techniques given the original tweet input.
+     """
+     nltk.download('stopwords')
+     eng_stopwords = set(stopwords.words('english'))
+    #tokenizer = TweetTokenizer(preserve_case=False, strip_handles=True, reduce_len=True)
+     stemmer = PorterStemmer()
+     #input_tokens = tokenizer.tokenize(tweet_input)
+
+     for word in input_tokens: # remove tokens that are stopwords
+         if (word in eng_stopwords):
+             input_tokens.remove(word)
+         else:
+             word = re.sub(r'https?:\/\/.*[\r\n]*', '', word) # delete hyperlinks
+             word = re.sub(r'[0-9]+', '', word) # delete numbers
+             word = re.sub(r'[!"#$%&()*+,-.\/:;<=>?@\[\]^_`{|}~\']', '', word) # remove punctuation
+             word = re.sub(r'RT', '', word) # remove the 're-tweet' substring
+
+     input_tokens = [stemmer.stem(token) for token in input_tokens] # perform stemming
+
+     return input_tokens
