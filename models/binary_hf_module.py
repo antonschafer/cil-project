@@ -9,8 +9,11 @@ class BinaryHFModule(BaseModule):
 
     def __init__(self, config):
         super().__init__(config)
-        self.model = AutoModelForSequenceClassification.from_pretrained(config['model_name'], num_labels=2,
+        self.model = AutoModelForSequenceClassification.from_pretrained(config['model_name'], num_labels=2,revision="float16", torch_dtype=torch.float16, low_cpu_mem_usage=True,
                                                                         ignore_mismatched_sizes=True,output_hidden_states= config.get("output_hidden_states",False))
+        if "gpt" in config['model_name'].lower():
+            self.model.config.pad_token_id = self.model.config.eos_token_id
+
 
     def forward(self, x):
         # x should be a dictionnary with at least a key input_ids

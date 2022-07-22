@@ -1,6 +1,4 @@
 import os
-os.environ["TRANSFORMERS_CACHE"] = "/cluster/scratch/gboeshertz/hugging_cache/"#config["save_dir"]
-
 from torch.utils.data import DataLoader
 import wandb
 
@@ -11,13 +9,17 @@ import numpy as np
 import torch
 
 def train(config, module):
+    
+    tokenizer = GPT2Tokenizer.from_pretrained("ydshieh/tiny-random-gptj-for-sequence-classification")
+    model = GPTJForSequenceClassification.from_pretrained("ydshieh/tiny-random-gptj-for-sequence-classification", problem_type="multi_label_classification")
+
     model = module(config=config)
 
     trainer = get_trainer(config)
 
     train_set, val_set, val_final_set, test_set = get_base_datasets(config)
 
-    #train_set = run_preprocessing(train_set)
+    train_set = run_preprocessing(train_set)
 
     train_loader = DataLoader(
         train_set, batch_size=config['batch_size'], shuffle=True, drop_last=True, num_workers=1)
@@ -46,8 +48,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     config, module = get_bert_config(args)
-
-    os.environ["TRANSFORMERS_CACHE"] = config["save_dir"]
 
 
     # we are using 1 worker and that's ok

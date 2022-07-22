@@ -81,11 +81,13 @@ class BaseModule(pl.LightningModule):
             print("Validation Classification Report for validation loader" +(("_"+str(val_idx)) if val_idx >0 else "")+":")
             print(classification_report(labels, bin_preds, zero_division=0,digits=4))
 
-        if isinstance(outputs, list):
+        if isinstance(outputs[0], dict):
+            process_val_output(outputs, 0)
+        else:
+            # For multiple validation loaders
             for output_idx, output in enumerate(outputs):
                 process_val_output(output, output_idx)
-        else:
-            process_val_output(outputs, 0)
+            
 
     def predict_step(self, batch, batch_idx):
         preds, labels, loss = self.preds_labels_loss(

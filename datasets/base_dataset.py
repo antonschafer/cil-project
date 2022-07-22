@@ -32,6 +32,7 @@ class BaseDataset(Dataset):
 
         # tokenize
         print("Tokenizing data...")
+        self.tokenizer.pad_token = self.tokenizer.eos_token
         all_tokens = self.tokenizer(list(self.texts), padding='max_length',
                                     max_length=104, truncation=True, return_tensors="pt")['input_ids']
 

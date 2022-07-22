@@ -147,7 +147,7 @@ def run_glove(config):
     test_outputs[test_outputs == 0] = -1
     ids = np.arange(1, test_outputs.shape[0]+1)
     outdf = pd.DataFrame({"Id": ids, 'Prediction': test_outputs})
-    outdf.to_csv(os.path.join(config["save_dir"], 'glove_outputs.csv'), index=False)
+    outdf.to_csv(os.path.join(wandb.run.dir, 'glove_outputs.csv'), index=False)
 
 
 def run_tfidf(config):
@@ -155,9 +155,7 @@ def run_tfidf(config):
     wandb.init(project="tfidf")
 
     train_data, val_data, val_final_data, test_data = load_data(config["full_data"])
-    nltk.download('omw-1.4')
     nltk.download('stopwords')
-    nltk.download('wordnet')
 
     stopwords = nltk.corpus.stopwords.words('english')
 

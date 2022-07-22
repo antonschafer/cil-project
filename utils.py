@@ -3,8 +3,9 @@ import pytorch_lightning as pl
 import hashlib
 import dill  # can pickle lambdas
 import torch
-from transformers import AutoModel, AutoTokenizer
 import os
+
+from transformers import AutoModel, AutoTokenizer
 import wandb
 import yaml
 import time
@@ -56,6 +57,13 @@ MODELS = {
         "module": ThreeClassHFModule,
         "data_transform": lambda x: x.replace("<user>", "@user").replace("<url>", "http"),
     },
+    "gptj": {
+        "model_name": "EleutherAI/gpt-j-6B",
+        "tokenizer_name": "EleutherAI/gpt-j-6B",
+        "module": BinaryHFModule,
+        "data_transform": None,
+    },
+
     # --------------------------------------------------------------------------------
     # Models only for generating embeddings
     # --------------------------------------------------------------------------------
@@ -119,6 +127,8 @@ def function_to_hash(func):
 
 def get_base_datasets(config):
     data_transform = MODELS[config['model']]['data_transform']
+
+    
 
     # check if can load from cache
     option_str = "_".join(
@@ -198,9 +208,13 @@ def get_trainer(config):
                  ModelCheckpoint(monitor='val_loss', dirpath=wandb.run.dir, filename="model")]
 
     extra_args = DEBUG_TRAINER_ARGS if config["debug"] else {}
-    trainer = pl.Trainer(max_epochs=config['nepochs'], accelerator="auto", callbacks=callbacks,
+    extra_args["accelerator"] = "gpu" if torch.cuda.is_available()  else "auto"
+    extra_args["devices"] =  list(range(torch.cuda.device_count())) if torch.cuda.is_available() else None
+    print(extra_args)
+
+    trainer = pl.Trainer(max_epochs=config['nepochs'],  callbacks=callbacks, precision = config.get("precision",32),
                          val_check_interval=config['val_check_interval'], gradient_clip_val=1, logger=wandb_logger,
-                         accumulate_grad_batches=config['accumulate_grad_batches'],
+                         accumulate_grad_batches=config['accumulate_grad_batches'], amp_level=config.get("amp_level",None),
                          **extra_args)
     return trainer
 
