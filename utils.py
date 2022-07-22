@@ -56,6 +56,13 @@ MODELS = {
         "module": ThreeClassHFModule,
         "data_transform": lambda x: x.replace("<user>", "@user").replace("<url>", "http"),
     },
+    "bert-emotion": {
+        "model_name": "bhadresh-savani/distilbert-base-uncased-emotion",
+        "tokenizer_name": "bhadresh-savani/distilbert-base-uncased-emotion",
+        "module": BinaryHFModule,
+        "data_transform": None
+    },
+
     # --------------------------------------------------------------------------------
     # Models only for generating embeddings
     # --------------------------------------------------------------------------------
