@@ -60,15 +60,15 @@ def save_embeddings(config, module):
     _, val_set, val_final_set, test_set = get_base_datasets(config)
 
     val_embeddings = get_embeddings(model, val_set, has_labels=True)
-    np.save(os.path.join(wandb.run.dir, "val_embeddings.npy"), val_embeddings)
+    np.save(os.path.join(wandb.run.dir, "val_preds.npy"), val_embeddings)
 
     val_final_embeddings = get_embeddings(
         model, val_final_set, has_labels=True)
-    np.save(os.path.join(wandb.run.dir, "val_final_embeddings.npy"),
+    np.save(os.path.join(wandb.run.dir, "val_final_preds.npy"),
             val_final_embeddings)
 
     test_embeddings = get_embeddings(model, test_set, has_labels=False)
-    np.save(os.path.join(wandb.run.dir, "test_embeddings.npy"), test_embeddings)
+    np.save(os.path.join(wandb.run.dir, "test_preds.npy"), test_embeddings)
 
 
 if __name__ == '__main__':
