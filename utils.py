@@ -74,6 +74,15 @@ MODELS = {
         "module": lambda _: AutoModelForSequenceClassification.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment"),
         "data_transform": lambda x: x.replace("<user>", "@user").replace("<url>", "http"),
     },
+    # --------------------------------------------------------------------------------
+    # Only for tokenization
+    # --------------------------------------------------------------------------------
+    "gpt2_tokenizer": {
+        "model_name": None,
+        "tokenizer_name": "gpt2",
+        "module": None,
+        "data_transform": None
+    }
 }
 
 

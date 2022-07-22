@@ -1,6 +1,9 @@
 import argparse
 import os
-from utils import load_wandb_file, get_base_datasets, MODELS
+
+from transformers import AutoTokenizer
+from datasets.base_dataset import BaseDataset
+from utils import load_pickle, load_wandb_file, get_base_datasets, MODELS
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -46,24 +49,28 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--save_dir', type=str,
         default=os.path.join("/cluster/scratch", os.environ["USER"]))
-    parser.add_argument('--model', type=str)
     parser.add_argument('--run_id', type=str)
     args = parser.parse_args()
 
-    tokenizer_name = MODELS[args.model]["tokenizer_name"]
-                    
 
-    config = dict(full_data=True, save_dir=args.save_dir, model=args.model,
-        tokenizer_name=tokenizer_name)
+    config = dict(full_data=True, save_dir=args.save_dir, model="gpt2_tokenizer", tokenizer_name="gpt2")
 
-    datasets = get_base_datasets(config)
+    cache_dir = os.path.join(args.save_dir, "cache")
+    os.makedirs(cache_dir, exist_ok=True)
+    cache_file = os.path.join(cache_dir, "gp2tokdata_val_final.pkl")
+    if os.path.exists(cache_file):
+        print("Loading dataset from cache:", cache_file)
+        dataset = load_pickle(cache_file)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained("gpt2")
+        dataset = BaseDataset(split="val_final", tokenizer=tokenizer, full_data=True, transform=None, pad=False)
 
-    labels = datasets[1].labels[:,1].bool().numpy()
-    preds = np.load(load_wandb_file("val_preds.npy", args.run_id, args.save_dir))
+    labels = dataset.labels[:,1].bool().numpy()
+    preds = np.load(load_wandb_file("val_final_preds.npy", args.run_id, args.save_dir))
     assert labels.shape == preds.shape
 
     plot_uncertain_predictions(preds, labels,
-        "Validation Mispredictions by Prediction Uncertainty",
+        "Val Final Mispredictions by Prediction Uncertainty",
         os.path.join("./gpt3/mispred_plots/{}.png".format(args.run_id)))
 
 

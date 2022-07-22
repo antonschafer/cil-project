@@ -5,7 +5,7 @@ import pandas as pd
 from datasets.version import DATA_VERSION
 
 class BaseDataset(Dataset):
-    def __init__(self, split, tokenizer, seed=0, full_data=True, transform=None, train_data_size=None):
+    def __init__(self, split, tokenizer, seed=0, full_data=True, transform=None, train_data_size=None, pad=True):
         super().__init__()
         self.split = split
         self.full_data = full_data
@@ -13,6 +13,7 @@ class BaseDataset(Dataset):
         self.transform = transform
         self.seed = seed
         self.train_data_size = train_data_size
+        self.pad = pad
         self.load_data()
         self.data, self.labels = self.preprocess_data()
 
@@ -34,8 +35,8 @@ class BaseDataset(Dataset):
 
         # tokenize
         print("Tokenizing data...")
-        all_tokens = self.tokenizer(list(self.texts), padding='max_length',
-                                    max_length=104, truncation=True, return_tensors="pt")['input_ids']
+        all_tokens = self.tokenizer(list(self.texts), padding='max_length' if self.pad else False,
+                                    max_length=104, truncation=True, return_tensors="pt" if self.pad else None)['input_ids']
 
         labels_vector = torch.zeros((self.df.shape[0], 2))
         labels_vector[range(labels_vector.shape[0]), self.df["labels"]] = 1
