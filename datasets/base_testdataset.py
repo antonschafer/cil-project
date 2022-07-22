@@ -14,7 +14,8 @@ class BaseTestDataset(Dataset):
         def read_txt(filename):
             with open(filename) as f:
                 data = f.readlines()
-            return list(data)
+            # drop numbers
+            return [",".join(x.split(",")[1:]) for x in data]
 
         self.test_data = read_txt('twitter-datasets/test_data.txt')
 
