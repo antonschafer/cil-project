@@ -120,9 +120,15 @@ def function_to_hash(func):
 def get_base_datasets(config):
     data_transform = MODELS[config['model']]['data_transform']
 
+    # set defaults
+    if "train_data_size" not in config:
+        config["train_data_size"] = None
+    if "seed" not in config:
+        config["seed"] = 0
+
     # check if can load from cache
     option_str = "_".join(
-        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform)), "v3"])
+        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform)), str(config["seed"]), str(config["train_data_size"]), "v4"])
     cache_dir = os.path.join(config["save_dir"], "cache")
     os.makedirs(cache_dir, exist_ok=True)
     cache_file = os.path.join(cache_dir, option_str + ".pkl")
@@ -219,7 +225,7 @@ def get_base_arg_parser():
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--train_data_size', type=float, default=1)
+    parser.add_argument('--train_data_size', type=float, default=None)
 
     parser.add_argument('--accumulate_grad_batches', type=int, default=1)
     parser.add_argument('--es_patience', type=int, default=3,
