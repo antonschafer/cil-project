@@ -2,6 +2,8 @@ from torch.utils.data import Dataset
 import torch
 import pandas as pd
 
+from datasets.version import DATA_VERSION
+
 class BaseDataset(Dataset):
     def __init__(self, split, tokenizer, seed=0, full_data=True, transform=None, train_data_size=None):
         super().__init__()
@@ -15,7 +17,7 @@ class BaseDataset(Dataset):
         self.data, self.labels = self.preprocess_data()
 
     def load_data(self):
-        filename = "./twitter-datasets/" + ("full_" if self.full_data else "small_") + self.split+".csv"
+        filename = "./twitter-datasets/" + ("full_" if self.full_data else "small_") + self.split+"_v{}.csv".format(DATA_VERSION)
         self.df = pd.read_csv(filename)
         if self.train_data_size is not None:
             self.df = self.df.sample(int(self.df.shape[0] * self.train_data_size), random_state=self.seed).reset_index(drop=True)

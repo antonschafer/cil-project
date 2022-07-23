@@ -1,5 +1,4 @@
 from torch.utils.data import Dataset
-import torch
 
 
 class BaseTestDataset(Dataset):
@@ -13,8 +12,10 @@ class BaseTestDataset(Dataset):
     def load_data(self):
         def read_txt(filename):
             with open(filename) as f:
-                data = f.readlines()
-            return list(data)
+                data = f.read().split("\n")
+                data = [x for x in data if x != ""]
+            # drop indices
+            return [",".join(x.split(",")[1:]) for x in data]
 
         self.test_data = read_txt('twitter-datasets/test_data.txt')
 

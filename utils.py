@@ -7,15 +7,10 @@ from transformers import AutoModel, AutoTokenizer
 import os
 import wandb
 import yaml
-import time
 import pandas as pd
-import re
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
-from nltk.tokenize import TweetTokenizer
 from datasets.base_dataset import BaseDataset
 from datasets.base_testdataset import BaseTestDataset
+from datasets.version import DATA_VERSION
 from models.binary_hf_module import BinaryHFModule
 from models.three_class_hf_module import ThreeClassHFModule
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -28,6 +23,7 @@ DEBUG_TRAINER_ARGS = {"limit_train_batches": 10,
                       "limit_val_batches": 5}
 
 WANDB_PROJECT_PATH = "cil-biggoodteam/twitter-sentiment-analysis/"
+
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -56,6 +52,13 @@ MODELS = {
         "module": ThreeClassHFModule,
         "data_transform": lambda x: x.replace("<user>", "@user").replace("<url>", "http"),
     },
+    "distilbert_emotion": {
+        "model_name": "bhadresh-savani/distilbert-base-uncased-emotion",
+        "tokenizer_name": "bhadresh-savani/distilbert-base-uncased-emotion",
+        "module": BinaryHFModule,
+        "data_transform": None
+    },
+
     # --------------------------------------------------------------------------------
     # Models only for generating embeddings
     # --------------------------------------------------------------------------------
@@ -82,11 +85,15 @@ def get_bert_config(args):
     if config["save_dir"] == "":
         config["save_dir"] = os.path.join(
             "/cluster/scratch", os.environ["USER"])
+    
+    # add data version
+    config["DATA_VERSION"] = DATA_VERSION
 
     # retrieve model info
     config["model_name"] = MODELS[config["model"]]["model_name"]
     config["tokenizer_name"] = MODELS[config["model"]]["tokenizer_name"]
     module = MODELS[config["model"]]["module"]
+
 
     print('Config:')
     print(config)
@@ -120,9 +127,15 @@ def function_to_hash(func):
 def get_base_datasets(config):
     data_transform = MODELS[config['model']]['data_transform']
 
+    # set defaults
+    if "train_data_size" not in config:
+        config["train_data_size"] = None
+    if "seed" not in config:
+        config["seed"] = 0
+
     # check if can load from cache
     option_str = "_".join(
-        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform)), "v2"])
+        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform)), str(config["seed"]), str(config["train_data_size"]), "v" + str(DATA_VERSION)])
     cache_dir = os.path.join(config["save_dir"], "cache")
     os.makedirs(cache_dir, exist_ok=True)
     cache_file = os.path.join(cache_dir, option_str + ".pkl")
@@ -136,6 +149,8 @@ def get_base_datasets(config):
         tokenizer = AutoTokenizer.from_pretrained(config['tokenizer_name'])
         train_data = BaseDataset(split="train", tokenizer=tokenizer,
                                  full_data=config['full_data'], seed=config['seed'], transform=data_transform, train_data_size=config['train_data_size'])
+        train_ensemble_data = BaseDataset(split="train_ensemble", tokenizer=tokenizer,
+                                 full_data=config['full_data'], seed=config['seed'], transform=data_transform, train_data_size=config['train_data_size'])
         val_data = BaseDataset(split="val", tokenizer=tokenizer,
                                full_data=config['full_data'], transform=data_transform)
         val_final_data = BaseDataset(
@@ -147,9 +162,9 @@ def get_base_datasets(config):
         # save to cache
         print("Saving datasets to cache:", cache_file)
         write_pickle(
-            [train_data, val_data, val_final_data, test_data], cache_file)
+            [train_data, train_ensemble_data, val_data, val_final_data, test_data], cache_file)
 
-        return train_data, val_data, val_final_data, test_data
+        return train_data, train_ensemble_data, val_data, val_final_data, test_data
 
 
 
@@ -219,7 +234,7 @@ def get_base_arg_parser():
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--train_data_size', type=float, default=1)
+    parser.add_argument('--train_data_size', type=float, default=None)
 
     parser.add_argument('--accumulate_grad_batches', type=int, default=1)
     parser.add_argument('--es_patience', type=int, default=3,
@@ -250,25 +265,3 @@ def load_wandb_file(fname, run_id, save_dir):
     return wandb.restore(
         fname, run_path=WANDB_PROJECT_PATH + run_id, root=run_cache_dir).name
 
-def run_preprocessing(input_tokens):
-     """
-     Perform basic preprocessing techniques given the original tweet input.
-     """
-     nltk.download('stopwords')
-     eng_stopwords = set(stopwords.words('english'))
-    #tokenizer = TweetTokenizer(preserve_case=False, strip_handles=True, reduce_len=True)
-     stemmer = PorterStemmer()
-     #input_tokens = tokenizer.tokenize(tweet_input)
-
-     for word in input_tokens: # remove tokens that are stopwords
-         if (word in eng_stopwords):
-             input_tokens.remove(word)
-         else:
-             word = re.sub(r'https?:\/\/.*[\r\n]*', '', word) # delete hyperlinks
-             word = re.sub(r'[0-9]+', '', word) # delete numbers
-             word = re.sub(r'[!"#$%&()*+,-.\/:;<=>?@\[\]^_`{|}~\']', '', word) # remove punctuation
-             word = re.sub(r'RT', '', word) # remove the 're-tweet' substring
-
-     input_tokens = [stemmer.stem(token) for token in input_tokens] # perform stemming
-
-     return input_tokens

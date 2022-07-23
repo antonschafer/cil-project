@@ -2,7 +2,7 @@ import os
 from torch.utils.data import DataLoader
 import wandb
 
-from utils import get_base_arg_parser, get_base_datasets, get_bert_config, get_trainer, run_preprocessing
+from utils import get_base_arg_parser, get_base_datasets, get_bert_config, get_trainer
 from test import TEST_BATCH_SIZE, run_eval
 import warnings
 import numpy as np
@@ -13,9 +13,7 @@ def train(config, module):
 
     trainer = get_trainer(config)
 
-    train_set, val_set, val_final_set, test_set = get_base_datasets(config)
-
-    train_set = run_preprocessing(train_set)
+    train_set, _, val_set, val_final_set, test_set = get_base_datasets(config)
 
     train_loader = DataLoader(
         train_set, batch_size=config['batch_size'], shuffle=True, drop_last=True, num_workers=1)

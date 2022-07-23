@@ -39,7 +39,10 @@ def save_embeddings(config, module):
         wandb.init(name=config["run_name"],
                    dir=config["save_dir"], config=config)
 
-    _, val_set, val_final_set, test_set = get_base_datasets(config)
+    _, train_ensemble_set, val_set, val_final_set, test_set = get_base_datasets(config)
+
+    train_ensemble_embeddings = get_embeddings(model, train_ensemble_set, has_labels=True)
+    np.save(os.path.join(wandb.run.dir, "train_ensemble_preds.npy"), train_ensemble_embeddings)
 
     val_embeddings = get_embeddings(model, val_set, has_labels=True)
     np.save(os.path.join(wandb.run.dir, "val_preds.npy"), val_embeddings)
