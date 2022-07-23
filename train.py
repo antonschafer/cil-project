@@ -1,5 +1,6 @@
 import os
 os.environ["TRANSFORMERS_CACHE"] = "/cluster/scratch/gboeshertz/hugging_cache/"#config["save_dir"]
+os.environ["WANDB_MODE"] = "dryrun"
 
 from torch.utils.data import DataLoader
 import wandb

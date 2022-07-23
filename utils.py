@@ -18,12 +18,15 @@ from nltk.tokenize import TweetTokenizer
 from datasets.base_dataset import BaseDataset
 from datasets.base_testdataset import BaseTestDataset
 from models.binary_hf_module import BinaryHFModule
+from models.sharded_module import ShardedBinaryHFModule
+
 from models.three_class_hf_module import ThreeClassHFModule
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 from pytorch_lightning.loggers import WandbLogger
 import wandb
+from pytorch_lightning.strategies import DeepSpeedStrategy
 
 DEBUG_TRAINER_ARGS = {"limit_train_batches": 10,
                       "limit_val_batches": 5}
@@ -60,7 +63,7 @@ MODELS = {
     "gptj": {
         "model_name": "EleutherAI/gpt-j-6B",
         "tokenizer_name": "EleutherAI/gpt-j-6B",
-        "module": BinaryHFModule,
+        "module": ShardedBinaryHFModule,
         "data_transform": None,
     },
 
@@ -127,8 +130,6 @@ def function_to_hash(func):
 
 def get_base_datasets(config):
     data_transform = MODELS[config['model']]['data_transform']
-
-    
 
     # check if can load from cache
     option_str = "_".join(
@@ -205,16 +206,20 @@ def get_trainer(config):
         project="twitter-sentiment-analysis", name=config["run_name"], save_dir=config["save_dir"])
 
     callbacks = [EarlyStopping(monitor="val_loss", mode="min", patience=config["es_patience"]),
-                 ModelCheckpoint(monitor='val_loss', dirpath=wandb.run.dir, filename="model")]
-
+                # ModelCheckpoint(monitor='val_loss', dirpath=wandb.run.dir, filename="model")]
+    ]
     extra_args = DEBUG_TRAINER_ARGS if config["debug"] else {}
     extra_args["accelerator"] = "gpu" if torch.cuda.is_available()  else "auto"
     extra_args["devices"] =  list(range(torch.cuda.device_count())) if torch.cuda.is_available() else None
     print(extra_args)
 
     trainer = pl.Trainer(max_epochs=config['nepochs'],  callbacks=callbacks, precision = config.get("precision",32),
-                         val_check_interval=config['val_check_interval'], gradient_clip_val=1, logger=wandb_logger,
-                         accumulate_grad_batches=config['accumulate_grad_batches'], amp_level=config.get("amp_level",None),
+                         val_check_interval=config['val_check_interval'], gradient_clip_val=1, #logger=wandb_logger,
+                         accumulate_grad_batches=config['accumulate_grad_batches'], 
+                         strategy= DeepSpeedStrategy(
+                                    stage=3,
+                                    offload_optimizer=True,
+                                    offload_parameters=True),
                          **extra_args)
     return trainer
 

@@ -5,7 +5,7 @@ save_dir: ""
 nepochs: 2
 val_check_interval: 1.0
 lr: 0.00002
-batch_size: 16
+batch_size: 2
 precision: 16
 accumulate_grad_batches: 1
 full_data: True
@@ -13,4 +13,3 @@ debug: False
 es_patience: 3
 seed: 1
 train_data_size: 0.4
-amp_level: "O3"
