@@ -2,7 +2,7 @@ from torch.utils.data import Dataset
 import torch
 import pandas as pd
 
-from utils import DATA_VERSION
+from datasets.version import DATA_VERSION
 
 class BaseDataset(Dataset):
     def __init__(self, split, tokenizer, seed=0, full_data=True, transform=None, train_data_size=None):
