@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
-from utils import get_base_datasets, load_wandb_file
+from utils import DATA_VERSION, load_wandb_file
 
 
 class EnsembleDataset(Dataset):
@@ -35,7 +35,7 @@ class EnsembleDataset(Dataset):
             assert len(self.labels) == len(self.features)
 
     def load_labels(self):
-        filename = "./twitter-datasets/full_" + self.split + ".csv"
+        filename = "./twitter-datasets/full_" + self.split + "_v{}.csv".format(DATA_VERSION)
         self.labels = torch.tensor(pd.read_csv(
             filename)["labels"], dtype=torch.float32)
 

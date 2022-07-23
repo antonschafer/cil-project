@@ -56,7 +56,7 @@ def test(config, module):
         os.environ["WANDB_MODE"] = "dryrun"
         wandb.init(dir=config["save_dir"])
 
-    _, val_set, val_final_set, test_set = get_base_datasets(config)
+    _, _, val_set, val_final_set, test_set = get_base_datasets(config)
     run_eval(model, ckpt_path, val_set, val_final_set, test_set)
 
 

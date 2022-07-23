@@ -41,7 +41,7 @@ def clean_texts(texts,lemmatizer,stopwords):
 def run_tfidf(config):
 
     #data_pos, data_neg,test_data = load_data(config["full_data"])
-    train_data, val_data, val_final_data, test_data = get_base_datasets(config)
+    train_data, _, val_data, val_final_data, test_data = get_base_datasets(config)
     stopwords = nltk.corpus.stopwords.words('english')
     lemmatizer = WordNetLemmatizer()
 

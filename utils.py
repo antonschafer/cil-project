@@ -23,7 +23,7 @@ DEBUG_TRAINER_ARGS = {"limit_train_batches": 10,
 
 WANDB_PROJECT_PATH = "cil-biggoodteam/twitter-sentiment-analysis/"
 
-DATA_VERSION = 6
+DATA_VERSION = 7
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -149,6 +149,8 @@ def get_base_datasets(config):
         tokenizer = AutoTokenizer.from_pretrained(config['tokenizer_name'])
         train_data = BaseDataset(split="train", tokenizer=tokenizer,
                                  full_data=config['full_data'], seed=config['seed'], transform=data_transform, train_data_size=config['train_data_size'])
+        train_ensemble_data = BaseDataset(split="train_ensemble", tokenizer=tokenizer,
+                                 full_data=config['full_data'], seed=config['seed'], transform=data_transform, train_data_size=config['train_data_size'])
         val_data = BaseDataset(split="val", tokenizer=tokenizer,
                                full_data=config['full_data'], transform=data_transform)
         val_final_data = BaseDataset(
@@ -160,9 +162,9 @@ def get_base_datasets(config):
         # save to cache
         print("Saving datasets to cache:", cache_file)
         write_pickle(
-            [train_data, val_data, val_final_data, test_data], cache_file)
+            [train_data, train_ensemble_data, val_data, val_final_data, test_data], cache_file)
 
-        return train_data, val_data, val_final_data, test_data
+        return train_data, train_ensemble_data, val_data, val_final_data, test_data
 
 
 
