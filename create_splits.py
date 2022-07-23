@@ -1,15 +1,8 @@
-import argparse
-import os
-
-import string
 import pandas as pd
-import pickle
-import re
-import logging
-import traceback
 import numpy as np
 import random
 from sklearn.utils import shuffle
+from utils import DATA_VERSION
 
 
 random.seed(0)
@@ -43,9 +36,9 @@ def split_csv(full, val_size, val_final_size):
     df_val_final = df[train_size+val_size:]
 
     prefix = "full" if full else "small"
-    df_train.to_csv("./twitter-datasets/{}_train.csv".format(prefix),index=False)
-    df_val.to_csv("./twitter-datasets/{}_val.csv".format(prefix),index=False)
-    df_val_final.to_csv("./twitter-datasets/{}_val_final.csv".format(prefix),index=False)
+    df_train.to_csv("./twitter-datasets/{}_train_v{}.csv".format(prefix, DATA_VERSION),index=False)
+    df_val.to_csv("./twitter-datasets/{}_val_v{}.csv".format(prefix, DATA_VERSION),index=False)
+    df_val_final.to_csv("./twitter-datasets/{}_val_final_v{}.csv".format(prefix, DATA_VERSION),index=False)
 
     return
 

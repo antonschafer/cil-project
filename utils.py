@@ -23,6 +23,8 @@ DEBUG_TRAINER_ARGS = {"limit_train_batches": 10,
 
 WANDB_PROJECT_PATH = "cil-biggoodteam/twitter-sentiment-analysis/"
 
+DATA_VERSION = 6
+
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 MODELS = {
@@ -83,11 +85,15 @@ def get_bert_config(args):
     if config["save_dir"] == "":
         config["save_dir"] = os.path.join(
             "/cluster/scratch", os.environ["USER"])
+    
+    # add data version
+    config["DATA_VERSION"] = DATA_VERSION
 
     # retrieve model info
     config["model_name"] = MODELS[config["model"]]["model_name"]
     config["tokenizer_name"] = MODELS[config["model"]]["tokenizer_name"]
     module = MODELS[config["model"]]["module"]
+
 
     print('Config:')
     print(config)
@@ -129,7 +135,7 @@ def get_base_datasets(config):
 
     # check if can load from cache
     option_str = "_".join(
-        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform)), str(config["seed"]), str(config["train_data_size"]), "v5"])
+        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform)), str(config["seed"]), str(config["train_data_size"]), "v" + str(DATA_VERSION)])
     cache_dir = os.path.join(config["save_dir"], "cache")
     os.makedirs(cache_dir, exist_ok=True)
     cache_file = os.path.join(cache_dir, option_str + ".pkl")
