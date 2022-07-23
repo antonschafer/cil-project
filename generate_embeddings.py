@@ -10,7 +10,7 @@ from tqdm import tqdm
 import wandb
 from test import TEST_BATCH_SIZE
 from utils import get_base_datasets, get_bert_config, load_wandb_checkpoint, device
-
+from models.base_module import BaseModule
 
 def get_embeddings(model, dataset, has_labels):
     model.to(device)
@@ -22,14 +22,19 @@ def get_embeddings(model, dataset, has_labels):
             x = batch[0] if has_labels else batch
             x = x.to(device)
             out = model(x)
+            
             # not using pooler output as "were not initialized from the model checkpoint at cardiffnlp/twitter-xlm-roberta-base and are newly initialized"
-            cls_embedding = out["last_hidden_state"][:, 0]
+            if "last_hidden_states" in out.keys():
+                cls_embedding = out["last_hidden_states"][:, 0]
+            else:
+                cls_embedding = out["hidden_states"][-1][:, -1]
             embeddings.append(cls_embedding.detach().cpu())
     return torch.cat(embeddings, dim=0).numpy()
 
 
 def save_embeddings(config, module):
     model = module(config)
+
 
     if config["save_to_wandb"]:
         wandb.init(project="twitter-sentiment-analysis",
@@ -38,6 +43,19 @@ def save_embeddings(config, module):
         os.environ["WANDB_MODE"] = "dryrun"
         wandb.init(name=config["run_name"],
                    dir=config["save_dir"], config=config)
+
+    ckpt_path = None
+    if config["run_id"] is not None:
+        ckpt_path = load_wandb_checkpoint(
+            config["run_id"], save_dir=config["save_dir"])
+
+    else:
+        print("Using pre trained models")
+
+    if isinstance(model,BaseModule):
+        if ckpt_path is not None:
+            model.load_ckpt(ckpt_path)
+        model = model.model
 
     _, val_set, val_final_set, test_set = get_base_datasets(config)
 
@@ -63,6 +81,9 @@ if __name__ == '__main__':
     parser.add_argument('--save_to_wandb', action='store_true',
                         help="upload to wandb")
     parser.add_argument('--run_name', type=str, default=None)
+    parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--train_data_size', type=float, default=1.)
+    parser.add_argument('--run_id', type=str, default=None)
 
     args = parser.parse_args()
     args.config_path = ""  # just for get_bert_config # TODO solve cleaner
@@ -71,6 +92,7 @@ if __name__ == '__main__':
     # always generate for full dataset
     config["full_data"] = True
 
+    config["output_hidden_states"] = True
     # we are using 1 worker and that's ok
     warnings.filterwarnings("ignore", ".*does not have many workers.*")
 
