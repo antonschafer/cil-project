@@ -10,6 +10,7 @@ import yaml
 import pandas as pd
 from datasets.base_dataset import BaseDataset
 from datasets.base_testdataset import BaseTestDataset
+from datasets.version import DATA_VERSION
 from models.binary_hf_module import BinaryHFModule
 from models.three_class_hf_module import ThreeClassHFModule
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -23,7 +24,6 @@ DEBUG_TRAINER_ARGS = {"limit_train_batches": 10,
 
 WANDB_PROJECT_PATH = "cil-biggoodteam/twitter-sentiment-analysis/"
 
-DATA_VERSION = 7
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 

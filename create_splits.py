@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import random
 from sklearn.utils import shuffle
-from utils import DATA_VERSION
+from datasets.version import DATA_VERSION
 
 
 random.seed(0)

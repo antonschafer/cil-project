@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
-from utils import DATA_VERSION, load_wandb_file
+from utils import load_wandb_file
+from datasets.version import DATA_VERSION
 
 
 class EnsembleDataset(Dataset):
