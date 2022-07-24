@@ -3,7 +3,7 @@ import pytorch_lightning as pl
 import hashlib
 import dill  # can pickle lambdas
 import torch
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoModel, AutoModelForSequenceClassification, AutoTokenizer
 import os
 import wandb
 import yaml
@@ -67,7 +67,13 @@ MODELS = {
         "tokenizer_name": "cardiffnlp/twitter-roberta-base",
         "module": lambda _: AutoModel.from_pretrained("cardiffnlp/twitter-roberta-base"),
         "data_transform": lambda x: x.replace("<user>", "@user").replace("<url>", "http"),
-    }
+    },
+    "twitter_roberta_pos_neut_neg_preds": {
+        "model_name": "cardiffnlp/twitter-roberta-base-sentiment",
+        "tokenizer_name": "cardiffnlp/twitter-roberta-base-sentiment",
+        "module": lambda _: AutoModelForSequenceClassification.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment"),
+        "data_transform": lambda x: x.replace("<user>", "@user").replace("<url>", "http"),
+    },
 }
 
 
