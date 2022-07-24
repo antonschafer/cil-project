@@ -27,7 +27,7 @@ def train(config):
 
     trainer.fit(model, train_ensemble_loader, val_dataloaders=val_loader)
     run_eval(model, ckpt_path=trainer.checkpoint_callback.best_model_path,
-             val_set=val_set, val_final_set=val_final_set, test_set=test_set)
+             train_ensemble_set=train_ensemble_set, val_set=val_set, val_final_set=val_final_set, test_set=test_set)
 
 
 if __name__ == '__main__':
