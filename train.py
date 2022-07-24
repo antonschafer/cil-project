@@ -13,7 +13,7 @@ def train(config, module):
 
     trainer = get_trainer(config)
 
-    train_set, _, val_set, val_final_set, test_set = get_base_datasets(config)
+    train_set, train_ensemble_set, val_set, val_final_set, test_set = get_base_datasets(config)
 
     train_loader = DataLoader(
         train_set, batch_size=config['batch_size'], shuffle=True, drop_last=True, num_workers=1)
@@ -30,7 +30,7 @@ def train(config, module):
     else:
         ckpt_path = trainer.checkpoint_callback.best_model_path
 
-    run_eval(model, ckpt_path=ckpt_path, val_set=val_set, val_final_set=val_final_set, test_set=test_set)
+    run_eval(model, ckpt_path=ckpt_path, train_ensemble_set=train_ensemble_set, val_set=val_set, val_final_set=val_final_set, test_set=test_set)
 
 
 
