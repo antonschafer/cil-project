@@ -14,6 +14,6 @@
 
 
 ## Run ensemble:
-1. Make sure all runs you want to use as submodels have val_preds.npy, val_final_preds.npy, and test_preds.npy files. If they don't exist for a particular run with a model, run `python -m test --model ... --run_id ...  --save_to_wandb` to generate them.
-2. Include embeddings by including a run where embeddings were predicted (e.g. run 1oy7w4gu)
-3. Get the run ids of all runs you want to use and run via e.g.: `python -m train_ensemble --nepochs 50 --dropout 0.2 --hidden_size 512 --batch_size 64 --lr 0.001 --val_check_interval 1.0 --es_patience 5 --model_runs 1oy7w4gu 119ihalu 2zkvveys --run_name ensemble-example`
+1. Make sure all runs you want to use as submodels have train_ensemble_preds.npy, val_preds.npy, val_final_preds.npy, and test_preds.npy files. If they don't exist for a particular run with a model, run `python -m test --model ... --run_id ...  --save_to_wandb` to generate them.
+2. Include embeddings by including a run where embeddings were predicted (e.g. run 1h14sqcs)
+3. Get the run ids of all runs you want to use and run via e.g.: `python -m train_ensemble --nepochs 50 --dropout 0.2 --hidden_size 512 --batch_size 64 --lr 0.001 --val_check_interval 1.0 --model_runs 1h14sqcs 37brzj6x 1rmln14m 3kr9nxd1  --es_patience 5 --run_name ensemble-example`
