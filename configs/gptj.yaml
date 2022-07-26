@@ -1,4 +1,4 @@
-nepochs: 10
+nepochs: 5
 model: "gptj"
 run_name: "gptj"
 save_dir: ""
@@ -6,7 +6,7 @@ nepochs: 2
 val_check_interval: 1.0
 lr: 0.00002
 batch_size: 8
-precision: 16
+precision: 32
 accumulate_grad_batches: 1
 full_data: True
 debug: False
