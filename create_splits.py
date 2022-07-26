@@ -49,4 +49,4 @@ if __name__ == '__main__':
     print("Generating full datasplit")
     split_csv(full=True, train_ensemble_size=50000, val_size=10000, val_final_size=50000)
     print("\nGenerating small datasplit")
-    split_csv(full=True, train_ensemble_size=5000, val_size=1000, val_final_size=5000)
+    split_csv(full=False, train_ensemble_size=5000, val_size=1000, val_final_size=5000)
