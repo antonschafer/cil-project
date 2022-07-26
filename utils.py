@@ -203,17 +203,17 @@ def merge_metrics():
 def get_trainer(config):
     os.makedirs(config["save_dir"], exist_ok=True)
     #wandb_logger = WandbLogger(
-   #     project="twitter-sentiment-analysis", name=config["run_name"], save_dir=config["save_dir"])
+    #    project="twitter-sentiment-analysis", name=config["run_name"], save_dir=config["save_dir"])
 
     callbacks = [EarlyStopping(monitor="val_loss", mode="min", patience=config["es_patience"]),
-                 ModelCheckpoint(monitor='val_loss', dirpath=["save_dir"], filename="model")]
+                 ModelCheckpoint(monitor='val_loss', dirpath=config["save_dir"], filename="model")]
     extra_args = DEBUG_TRAINER_ARGS if config["debug"] else {}
     extra_args["accelerator"] = "gpu" if torch.cuda.is_available()  else "auto"
     extra_args["devices"] =  list(range(torch.cuda.device_count())) if torch.cuda.is_available() else None
     print(extra_args)
 
     trainer = pl.Trainer(max_epochs=config['nepochs'],  callbacks=callbacks, precision = config.get("precision",32),
-                         val_check_interval=config['val_check_interval'], gradient_clip_val=1, #logger=wandb_logger,
+                         val_check_interval=config['val_check_interval'], gradient_clip_val=1,# logger=wandb_logger,
                          accumulate_grad_batches=config['accumulate_grad_batches'], 
                          strategy= DeepSpeedStrategy(
                                     stage=3,
