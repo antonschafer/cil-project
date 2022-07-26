@@ -64,7 +64,7 @@ MODELS = {
         "model_name": "EleutherAI/gpt-j-6B",
         "tokenizer_name": "EleutherAI/gpt-j-6B",
         "module": ShardedBinaryHFModule,
-        "data_transform": None,
+        "data_transform": lambda x: x.replace("<user>", "@user").replace("<url>", "http"),
     },
 
     # --------------------------------------------------------------------------------
@@ -202,12 +202,11 @@ def merge_metrics():
 
 def get_trainer(config):
     os.makedirs(config["save_dir"], exist_ok=True)
-    wandb_logger = WandbLogger(
-        project="twitter-sentiment-analysis", name=config["run_name"], save_dir=config["save_dir"])
+    #wandb_logger = WandbLogger(
+   #     project="twitter-sentiment-analysis", name=config["run_name"], save_dir=config["save_dir"])
 
     callbacks = [EarlyStopping(monitor="val_loss", mode="min", patience=config["es_patience"]),
-                # ModelCheckpoint(monitor='val_loss', dirpath=wandb.run.dir, filename="model")]
-    ]
+                 ModelCheckpoint(monitor='val_loss', dirpath=["save_dir"], filename="model")]
     extra_args = DEBUG_TRAINER_ARGS if config["debug"] else {}
     extra_args["accelerator"] = "gpu" if torch.cuda.is_available()  else "auto"
     extra_args["devices"] =  list(range(torch.cuda.device_count())) if torch.cuda.is_available() else None
