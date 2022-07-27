@@ -1,6 +1,8 @@
 import argparse
 import os
 import warnings
+os.environ["TRANSFORMERS_CACHE"] = "/cluster/scratch/{}/hugging_cache/".format(os.environ["USER"])
+
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -30,7 +32,7 @@ def get_embeddings(model, dataset, has_labels, use_preds):
 
 
 def save_embeddings(config, module):
-    model = module(config)
+    
 
     if config["save_to_wandb"]:
         wandb.init(project="twitter-sentiment-analysis",
@@ -41,6 +43,8 @@ def save_embeddings(config, module):
                    dir=config["save_dir"], config=config)
 
     _, train_ensemble_set, val_set, val_final_set, test_set = get_base_datasets(config)
+
+    model = module(config)
 
     train_ensemble_embeddings = get_embeddings(model, train_ensemble_set, has_labels=True, use_preds=config["use_preds"])
     np.save(os.path.join(wandb.run.dir, "train_ensemble_preds.npy"), train_ensemble_embeddings)

@@ -164,7 +164,7 @@ def get_base_datasets(config):
     text_with_prompt = config.get("text_with_prompt",False) or "gpt" in config["model"]
     # check if can load from cache
     option_str = "_".join(
-        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform)), str(config["seed"]),text_with_prompt, str(config["train_data_size"]), "v" + str(DATA_VERSION)])
+        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform)), str(config["seed"]), str(text_with_prompt), str(config["train_data_size"]), "v" + str(DATA_VERSION)])
     cache_dir = os.path.join(config["save_dir"], "cache")
     os.makedirs(cache_dir, exist_ok=True)
     cache_file = os.path.join(cache_dir, option_str + ".pkl")

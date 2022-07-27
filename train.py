@@ -1,5 +1,6 @@
 import os
-os.environ["TRANSFORMERS_CACHE"] = "/cluster/scratch/gboeshertz/hugging_cache/"
+
+os.environ["TRANSFORMERS_CACHE"] = "/cluster/scratch/{}/hugging_cache/".format(os.environ["USER"])
 from torch.utils.data import DataLoader
 import wandb
 
