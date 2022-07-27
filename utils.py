@@ -165,7 +165,7 @@ def get_base_datasets(config):
         train_data = BaseDataset(split="train", tokenizer=tokenizer,
                                  full_data=config['full_data'], seed=config['seed'], transform=data_transform, train_data_size=config['train_data_size'])
         train_ensemble_data = BaseDataset(split="train_ensemble", tokenizer=tokenizer,
-                                 full_data=config['full_data'], seed=config['seed'], transform=data_transform, train_data_size=config['train_data_size'])
+                                 full_data=config['full_data'], seed=config['seed'], transform=data_transform, train_data_size=1)
         val_data = BaseDataset(split="val", tokenizer=tokenizer,
                                full_data=config['full_data'], transform=data_transform)
         val_final_data = BaseDataset(
