@@ -161,9 +161,10 @@ def get_base_datasets(config):
     if "seed" not in config:
         config["seed"] = 0
 
+    text_with_prompt = config.get("text_with_prompt",False) or "gpt" in config["model"]
     # check if can load from cache
     option_str = "_".join(
-        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform)), str(config["seed"]), str(config["train_data_size"]), "v" + str(DATA_VERSION)])
+        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform)), str(config["seed"]),text_with_prompt, str(config["train_data_size"]), "v" + str(DATA_VERSION)])
     cache_dir = os.path.join(config["save_dir"], "cache")
     os.makedirs(cache_dir, exist_ok=True)
     cache_file = os.path.join(cache_dir, option_str + ".pkl")
@@ -172,17 +173,17 @@ def get_base_datasets(config):
         return load_pickle(cache_file)
     else:
         print("Building datasets...")
-
+        
         # build datasets
         tokenizer = AutoTokenizer.from_pretrained(config['tokenizer_name'])
         train_data = BaseDataset(split="train", tokenizer=tokenizer,
-                                 full_data=config['full_data'], seed=config['seed'], transform=data_transform, train_data_size=config['train_data_size'])
+                                 full_data=config['full_data'], seed=config['seed'], transform=data_transform, train_data_size=config['train_data_size'],text_with_prompt=text_with_prompt)
         train_ensemble_data = BaseDataset(split="train_ensemble", tokenizer=tokenizer,
-                                 full_data=config['full_data'], seed=config['seed'], transform=data_transform, train_data_size=config['train_data_size'])
+                                 full_data=config['full_data'], seed=config['seed'], transform=data_transform, train_data_size=config['train_data_size'],text_with_prompt=text_with_prompt)
         val_data = BaseDataset(split="val", tokenizer=tokenizer,
-                               full_data=config['full_data'], transform=data_transform)
+                               full_data=config['full_data'], transform=data_transform,text_with_prompt=text_with_prompt)
         val_final_data = BaseDataset(
-            split="val_final", tokenizer=tokenizer, full_data=config['full_data'], transform=data_transform)
+            split="val_final", tokenizer=tokenizer, full_data=config['full_data'], transform=data_transform,text_with_prompt=text_with_prompt)
 
         test_data = BaseTestDataset(
             tokenizer=tokenizer, transform=data_transform)

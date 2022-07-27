@@ -5,7 +5,7 @@ import pandas as pd
 from datasets.version import DATA_VERSION
 
 class BaseDataset(Dataset):
-    def __init__(self, split, tokenizer, seed=0, full_data=True, transform=None, train_data_size=None, pad=True):
+    def __init__(self, split, tokenizer, seed=0, full_data=True, transform=None, train_data_size=None, pad=True,text_with_prompt=False):
         super().__init__()
         self.split = split
         self.full_data = full_data
@@ -14,15 +14,19 @@ class BaseDataset(Dataset):
         self.seed = seed
         self.train_data_size = train_data_size
         self.pad = pad
+        self.text_with_prompt = text_with_prompt
         self.load_data()
         self.data, self.labels = self.preprocess_data()
 
     def load_data(self):
-        filename = "./twitter-datasets/" + ("full_" if self.full_data else "small_") + self.split+"_v{}.csv".format(DATA_VERSION)
+        filename = "./twitter-datasets/" + ("full_" if self.full_data else "small_") + self.split+ ("_with_prompt" if self.text_with_prompt else "")+"_v{}.csv".format(DATA_VERSION)
         self.df = pd.read_csv(filename)
         if self.train_data_size is not None:
             self.df = self.df.sample(int(self.df.shape[0] * self.train_data_size), random_state=self.seed).reset_index(drop=True)
         
+        if self.text_with_prompt:
+            self.df["texts"] =  self.df["texts"].apply(lambda x :"Twitter Sentiment Analysis Examples.\n\n Tweet: {}\n Sentiment: ".format(x))
+
 
     def preprocess_data(self):
 
