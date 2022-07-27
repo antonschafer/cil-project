@@ -244,7 +244,7 @@ def get_trainer(config):
     extra_args["devices"] =  list(range(torch.cuda.device_count())) if torch.cuda.is_available() else None
     print(extra_args)
     trainer = pl.Trainer(max_epochs=config['nepochs'],  callbacks=callbacks, precision = config.get("precision",32),
-                         val_check_interval=config['val_check_interval'], gradient_clip_val=1, #logger=wandb_logger,
+                         val_check_interval=config['val_check_interval'], gradient_clip_val=1, logger=wandb_logger,
                          accumulate_grad_batches=config['accumulate_grad_batches'], 
                          strategy= DeepSpeedStrategy(
                                     stage=3,
