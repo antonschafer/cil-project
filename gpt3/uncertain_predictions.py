@@ -1,5 +1,6 @@
 import argparse
 import os
+from datasets.version import DATA_VERSION
 
 from transformers import AutoTokenizer
 from datasets.base_dataset import BaseDataset
@@ -9,27 +10,46 @@ from utils import load_pickle, load_wandb_file, get_base_datasets, MODELS, write
 import numpy as np
 from utils import get_base_arg_parser, get_base_datasets, get_bert_config, get_trainer
 import matplotlib.pyplot as plt
+import pandas as pd
 
 COST_PER_TOKEN = 0.12 / 1000
 UNC_THRESHS = np.concatenate([np.linspace(0, 0.4, 101), np.linspace(0.4, 0.45, 101), np.linspace(0.45, 0.5, 501)])
 
 
-def get_uncertain_from_run(run, save_dir, data, thresh):
+def get_uncertain_from_run(run, save_dir):
     preds = np.load(load_wandb_file('train_ensemble_preds.npy', run, save_dir))
     correct_preds = np.load(load_wandb_file('train_ensemble_correct_preds.npy', run, save_dir))
 
-    uncertain_keep = uncertain(preds, thresh) & ~correct_preds
+    uncertain_keep = n_most_uncertain(preds, correct_preds, 1000)
 
-    uncertain_train = np.random.choice(np.where(uncertain_keep)[0], 1000, replace=False)
     random_train = np.random.choice(np.where(~uncertain_keep)[0], 1000, replace=False)
+    train = np.append(random_train, np.where(uncertain_keep))
 
+    filename = "../twitter-datasets/full_train_ensemble" +  "_v{}.csv".format(
+        DATA_VERSION)
+    df = pd.read_csv(filename)
+    tweets = df.iloc[train]
+    tweets = tweets.rename(columns={'texts': 'prompt', 'labels': 'completion'})
 
-    #return train_ensemble_data[uncertain_train + random_train]
+    promptt = "Twitter Sentiment Analysis Examples.\n\n Tweet: {}\n Sentiment: "
+    labels = {
+        1: "positive",
+        0: "negative"
+    }
+    tweets["prompt"] = tweets["prompt"].apply(lambda x: promptt.format(x))
+    tweets["completion"] = tweets["completion"].apply(lambda x: labels[x])
+    tweets.to_csv('openai-parsed.csv', index=False)
+
 
 
 def uncertain(preds, thresh):
     return np.abs(preds - 0.5) <= thresh
 
+def n_most_uncertain(preds, correct_preds, n):
+    indexes = (np.abs(preds - 0.5) + correct_preds).argsort()[:n]
+    final = np.full_like(preds, False, dtype=bool)
+    final[indexes] = True
+    return final
 
 def get_n_mis_pred_uncertain(preds, labels, thresh):
     unc = uncertain(preds, thresh)
@@ -131,8 +151,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
-    data = BaseDataset(split='val', tokenizer=tokenizer, full_data=True, transform=None, pad=False)
-    get_uncertain_from_run('1xzdfqzi', args.save_dir, data, .3)
+
+    get_uncertain_from_run('26r80xv7', args.save_dir)
 
 
 
