@@ -1,7 +1,7 @@
 import argparse
 import os
 from datasets.version import DATA_VERSION
-
+import openai
 from transformers import AutoTokenizer
 from datasets.base_dataset import BaseDataset
 from datasets.base_testdataset import BaseTestDataset
@@ -11,8 +11,8 @@ import numpy as np
 from utils import get_base_arg_parser, get_base_datasets, get_bert_config, get_trainer
 import matplotlib.pyplot as plt
 import pandas as pd
-
-COST_PER_TOKEN = 0.12 / 1000
+import time
+COST_PER_TOKEN = 0.012 / 1000
 UNC_THRESHS = np.concatenate([np.linspace(0, 0.4, 101), np.linspace(0.4, 0.45, 101), np.linspace(0.45, 0.5, 501)])
 
 
@@ -31,7 +31,7 @@ def get_uncertain_from_run(run, save_dir):
     tweets = df.iloc[train]
     tweets = tweets.rename(columns={'texts': 'prompt', 'labels': 'completion'})
 
-    promptt = "Twitter Sentiment Analysis Examples.\n\n Tweet: {}\n Sentiment: "
+    promptt = "Tweet: {}\n Sentiment: "
     labels = {
         1: "positive",
         0: "negative"
@@ -39,6 +39,68 @@ def get_uncertain_from_run(run, save_dir):
     tweets["prompt"] = tweets["prompt"].apply(lambda x: promptt.format(x))
     tweets["completion"] = tweets["completion"].apply(lambda x: labels[x])
     tweets.to_csv('openai-parsed.csv', index=False)
+
+def get_final_uncertain_from_run(run, save_dir):
+    val_final = np.load(load_wandb_file('val_final_preds.npy', run, save_dir))
+    val_final_preds = val_final >= .5
+    filename = "../twitter-datasets/full_val_final" +  "_v{}.csv".format(
+        DATA_VERSION)
+    df = pd.read_csv(filename)
+    correct_labels = df.labels
+    masks = np.load('../gpt3/masks/1vox48hx_4-0.pkl', allow_pickle=True)
+    val_final_mask = masks[1]
+    to_pred = df[val_final_mask]
+    promptt = "{}\n Sentiment: "
+    tweets = to_pred.texts.apply(lambda x: promptt.format(x))
+    openai.api_key = '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'
+
+    preds = [False] * len(tweets)
+    for j, i in enumerate(tweets):
+        w = openai.Completion.create(model="curie:ft-personal-2022-07-27-15-32-23", prompt=i, temperature=0,
+                                     max_tokens=1)
+        preds[j] = w['choices'][0]['text'] == ' positive'
+
+    val_final_preds[tweets.index] = preds
+    pd.DataFrame(val_final_preds).to_csv(f'final_val_gpt3_{run}.csv')
+    print((val_final_preds == correct_labels).mean())
+
+    pass
+
+def load_data():
+    def read_txt(filename):
+        with open(filename) as f:
+            data = f.read().split("\n")
+            data = [x for x in data if x != ""]
+        # drop indices
+        return [",".join(x.split(",")[1:]) for x in data]
+
+    return read_txt('../twitter-datasets/test_data.txt')
+
+def get_test_uncertain_from_run(run, save_dir):
+    test = np.load(load_wandb_file('test_preds.npy', run, save_dir))
+    test_preds = test >= .5
+    df = pd.DataFrame(load_data(), columns=['texts'])
+    masks = np.load('../gpt3/masks/1vox48hx_4-0.pkl', allow_pickle=True)
+    test_mask = masks[0]
+    to_pred = df[test_mask]
+    promptt = "{}\n Sentiment: "
+    tweets = to_pred.texts.apply(lambda x: promptt.format(x))
+    openai.api_key = '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'
+
+    preds = [False] * len(tweets)
+    for j, i in enumerate(tweets):
+        w = openai.Completion.create(model="curie:ft-personal-2022-07-27-15-32-23", prompt=i, temperature=0,
+                                     max_tokens=1)
+        preds[j] = w['choices'][0]['text'] == ' positive'
+        time.sleep(2)
+
+    test_preds[tweets.index] = preds
+    final = pd.DataFrame(test_preds, columns=['Prediction']).reset_index(inplace=False).rename(columns = {'index':'Id'}, inplace = False)
+    final.Prediction = final.Prediction.replace({True: 1, False: 0})
+    final.to_csv(f'test{run}.csv', index=False)
+
+    pass
+
 
 
 
@@ -152,30 +214,29 @@ if __name__ == "__main__":
 
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
 
-    get_uncertain_from_run('26r80xv7', args.save_dir)
+    #get_uncertain_from_run('1vox48hx', args.save_dir)
+    get_test_uncertain_from_run('1vox48hx', args.save_dir)
+
+    #datasets, preds = {}, {}
+    #for split in ["val_final", "test"]:
+    ##    tokenizer = AutoTokenizer.from_pretrained("gpt2")
+    #    if split == "test":
+    #        dataset = BaseTestDataset(tokenizer=tokenizer, transform=None, pad=False)
+    #    else:
+    #        dataset = BaseDataset(split=split, tokenizer=tokenizer, full_data=True, transform=None, pad=False)
+    #        dataset.labels = dataset.labels[:, 1].bool().numpy()
+    #    datasets[split] = dataset
+    #    preds[split] = np.load(load_wandb_file("{}_preds.npy".format(split), args.run_id, args.save_dir))#
 
 
+    #plot_uncertain_predictions(preds["val_final"], datasets["val_final"].labels,
+    #                           "Val Final Mispredictions by Prediction Uncertainty",
+    #                           "../gpt3/mispred_plots/{}_ratios.png".format(args.run_id))
 
-    datasets, preds = {}, {}
-    for split in ["val_final", "test"]:
-        tokenizer = AutoTokenizer.from_pretrained("gpt2")
-        if split == "test":
-            dataset = BaseTestDataset(tokenizer=tokenizer, transform=None, pad=False)
-        else:
-            dataset = BaseDataset(split=split, tokenizer=tokenizer, full_data=True, transform=None, pad=False)
-            dataset.labels = dataset.labels[:, 1].bool().numpy()
-        datasets[split] = dataset
-        preds[split] = np.load(load_wandb_file("{}_preds.npy".format(split), args.run_id, args.save_dir))
-
-
-    plot_uncertain_predictions(preds["val_final"], datasets["val_final"].labels,
-                               "Val Final Mispredictions by Prediction Uncertainty",
-                               "./gpt3/mispred_plots/{}_ratios.png".format(args.run_id))
-
-    get_and_plot_uncertain_predictions(
-        datasets,
-        preds,
-        args.cost_lim,
-        "./gpt3/mispred_plots/{}_coverage_cost.png".format(args.run_id),
-        "./gpt3/masks/{}_{}.pkl".format(args.run_id, str(args.cost_lim).replace(".", "-")),
-    )
+    #get_and_plot_uncertain_predictions(
+    #    datasets,
+    #    preds,
+    ##    args.cost_lim,
+     #   "../gpt3/mispred_plots/{}_coverage_cost.png".format(args.run_id),
+    #    "../gpt3/masks/{}_{}.pkl".format(args.run_id, str(args.cost_lim).replace(".", "-")),
+    #)
