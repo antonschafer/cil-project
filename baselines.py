@@ -154,9 +154,7 @@ def run_tfidf(config):
 
     wandb.init(project="tfidf")
 
-    train_data, val_data, val_final_data, test_data = load_data(config["full_data"])
-    nltk.download('stopwords')
-
+    train_data, _, val_data, val_final_data, test_data = get_base_datasets(config)
     stopwords = nltk.corpus.stopwords.words('english')
 
 

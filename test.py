@@ -28,10 +28,11 @@ def run_and_save_val(trainer, model, dataset, ckpt_path, split_name):
     print(classification_report(labels, preds > 0.5, zero_division=0,digits=4))
 
 
-def run_eval(model, ckpt_path, val_set, val_final_set, test_set):
+def run_eval(model, ckpt_path, train_ensemble_set, val_set, val_final_set, test_set):
     trainer = pl.Trainer(accelerator="auto", max_epochs=1)
-    if val_set is not None:  # not used for ensemble testing as used for training there
-        run_and_save_val(trainer, model, val_set, ckpt_path, "val")
+
+    run_and_save_val(trainer, model, train_ensemble_set, ckpt_path, "train_ensemble")
+    run_and_save_val(trainer, model, val_set, ckpt_path, "val")
     run_and_save_val(trainer, model, val_final_set, ckpt_path, "val_final")
 
     test_loader = DataLoader(test_set, batch_size=TEST_BATCH_SIZE,
@@ -56,8 +57,8 @@ def test(config, module):
         os.environ["WANDB_MODE"] = "dryrun"
         wandb.init(dir=config["save_dir"])
 
-    _, val_set, val_final_set, test_set = get_base_datasets(config)
-    run_eval(model, ckpt_path, val_set, val_final_set, test_set)
+    _, train_ensemble_set, val_set, val_final_set, test_set = get_base_datasets(config)
+    run_eval(model, ckpt_path, train_ensemble_set, val_set, val_final_set, test_set)
 
 
 if __name__ == '__main__':

@@ -1,20 +1,22 @@
 from torch.utils.data import Dataset
-import torch
 
 
 class BaseTestDataset(Dataset):
-    def __init__(self, tokenizer, transform=None):
+    def __init__(self, tokenizer, transform=None, pad=True):
         super().__init__()
         self.tokenizer = tokenizer
         self.transform = transform
+        self.pad = pad
         self.load_data()
         self.data = self.preprocess_data()
 
     def load_data(self):
         def read_txt(filename):
             with open(filename) as f:
-                data = f.readlines()
-            return list(data)
+                data = f.read().split("\n")
+                data = [x for x in data if x != ""]
+            # drop indices
+            return [",".join(x.split(",")[1:]) for x in data]
 
         self.test_data = read_txt('twitter-datasets/test_data.txt')
 
@@ -27,10 +29,8 @@ class BaseTestDataset(Dataset):
 
         # tokenize
         print("Tokenizing data...")
-        tokens_pos = self.tokenizer(list(self.test_data), padding='max_length',
-                                    max_length=104, truncation=True, return_tensors="pt")['input_ids']
-        #tokens_pos = self.tokenizer(list(self.test_data), padding=True, truncation=True, return_tensors="pt")['input_ids']
-        return tokens_pos
+        return self.tokenizer(list(self.test_data), padding='max_length' if self.pad else False,
+                                    max_length=104, truncation=True, return_tensors="pt" if self.pad else None)['input_ids']
 
     def __getitem__(self, index):
         return self.data[index]
