@@ -14,7 +14,9 @@ from utils import get_base_datasets, get_bert_config, device
 
 def get_embeddings(model, dataset, has_labels, use_preds):
     model.to(device)
+    model = model.model
     model.eval()
+    
     dataloader = DataLoader(dataset, batch_size=TEST_BATCH_SIZE)
     embeddings = []
     with torch.no_grad():

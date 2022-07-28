@@ -9,7 +9,7 @@ class ShardedBinaryHFModule(BaseModule):
 
     def __init__(self, config):
         super().__init__(config)
-        self.model = GPTJForSequenceClassification.from_pretrained("EleutherAI/gpt-j-6B",num_labels=2)
+        self.model = GPTJForSequenceClassification.from_pretrained("EleutherAI/gpt-j-6B",num_labels=2,output_hidden_states= config.get("output_hidden_states",False))
                                                                 
         if "gpt" in config['model_name'].lower():
             self.model.config.pad_token_id = self.model.config.eos_token_id
