@@ -11,9 +11,7 @@ import numpy as np
 import torch
 
 def train(config, module):
-    print("TRAIN")
     model = module(config=config)
-    print("MDEL")
     trainer = get_trainer(config)
 
     train_set, train_ensemble_set, val_set, val_final_set, test_set = get_base_datasets(config)

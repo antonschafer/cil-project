@@ -9,11 +9,12 @@ class ShardedBinaryHFModule(BaseModule):
 
     def __init__(self, config):
         super().__init__(config)
-        self.model = GPTJForSequenceClassification.from_pretrained("EleutherAI/gpt-j-6B",num_labels=2,output_hidden_states= config.get("output_hidden_states",False))
+        self.model = GPTJForSequenceClassification.from_pretrained("EleutherAI/gpt-j-6B",num_labels=2,output_hidden_states= config.get("output_hidden_states",False),torch_dtype=torch.float16,device_map="auto")
                                                                 
         if "gpt" in config['model_name'].lower():
             self.model.config.pad_token_id = self.model.config.eos_token_id
 
+    """
     def configure_sharded_model(self):
         # modules are sharded across processes
         # as soon as they are wrapped with ``wrap`` or ``auto_wrap``.
@@ -22,7 +23,7 @@ class ShardedBinaryHFModule(BaseModule):
         # For best memory efficiency,
         # add FairScale activation checkpointing
         self.model = auto_wrap(self.model)
-
+    """
 
     def forward(self, x):
         # x should be a dictionnary with at least a key input_ids
