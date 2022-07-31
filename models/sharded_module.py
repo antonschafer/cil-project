@@ -16,12 +16,6 @@ class ShardedBinaryHFModule(BaseModule):
 
     """
     def configure_sharded_model(self):
-        # modules are sharded across processes
-        # as soon as they are wrapped with ``wrap`` or ``auto_wrap``.
-        # During the forward/backward passes, weights get synced across processes
-        # and de-allocated once computation is complete, saving memory.
-        # For best memory efficiency,
-        # add FairScale activation checkpointing
         self.model = auto_wrap(self.model)
     """
 
