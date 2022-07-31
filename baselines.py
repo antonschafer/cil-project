@@ -153,7 +153,7 @@ def run_glove(config):
 
 def run_tfidf(config):
 
-    #wandb.init(project="tfidf")
+    wandb.init(project="tfidf")
 
     train_data, val_data, val_final_data, test_data = load_data(config["full_data"])
     stopwords = nltk.corpus.stopwords.words('english')
