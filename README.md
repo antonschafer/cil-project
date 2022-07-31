@@ -14,8 +14,9 @@
 
 ## Compute Coverages:
 
-python compute_coverage.py --model_runs {MODEL ID'S YOU WANT TO COMBINE}
-ex: python compute_coverage.py  --model_runs 1poxasnf 3hbr9c7b 2pd8pjdr z839cmze 1okolsk9
+`python compute_coverage.py --model_runs {MODEL ID'S YOU WANT TO COMBINE}`
+
+Example: `python compute_coverage.py  --model_runs 1poxasnf 3hbr9c7b 2pd8pjdr z839cmze 1okolsk9`
 
 The code will produce the coverage for all the possible combinations of UP to three models
 
