@@ -6,7 +6,6 @@ from models.base_module import BaseModule
 
 
 class EnsembleModule(BaseModule):
-
     def __init__(self, in_dim, config):  # TODO put in_dim in config?
         super().__init__(config=config)
         self.in_dim = in_dim
@@ -19,7 +18,7 @@ class EnsembleModule(BaseModule):
             nn.BatchNorm1d(config["hidden_size"]),
             nn.LeakyReLU(),
             nn.Dropout(config["dropout"]),
-            nn.Linear(config['hidden_size'], 1),
+            nn.Linear(config["hidden_size"], 1),
         )
 
     def forward(self, x):
@@ -36,13 +35,16 @@ class EnsembleModule(BaseModule):
         return torch.sigmoid(self(batch)).view(-1).cpu()
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=self.config['lr'])
+        optimizer = optim.Adam(self.parameters(), lr=self.config["lr"])
         lr_scheduler_config = {
             "scheduler": optim.lr_scheduler.ReduceLROnPlateau(
-                optimizer, factor=0.1, patience=2, verbose=True,
+                optimizer,
+                factor=0.1,
+                patience=2,
+                verbose=True,
             ),
             "interval": "epoch",
             "frequency": 1,
-            "monitor": "val_loss"
+            "monitor": "val_loss",
         }
         return [optimizer], [lr_scheduler_config]

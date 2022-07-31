@@ -1,17 +1,26 @@
 from torch import optim
-from transformers import AutoModelForSequenceClassification,GPTNeoForSequenceClassification,GPTJForSequenceClassification
+from transformers import (
+    AutoModelForSequenceClassification,
+    GPTNeoForSequenceClassification,
+    GPTJForSequenceClassification,
+)
 import torch
 from fairscale.nn import checkpoint_wrapper, auto_wrap, wrap
 from models.base_module import BaseModule
 
 
 class ShardedBinaryHFModule(BaseModule):
-
     def __init__(self, config):
         super().__init__(config)
-        self.model = GPTJForSequenceClassification.from_pretrained("EleutherAI/gpt-j-6B",num_labels=2,output_hidden_states= config.get("output_hidden_states",False),torch_dtype=torch.float16,device_map="auto")
-                                                                
-        if "gpt" in config['model_name'].lower():
+        self.model = GPTJForSequenceClassification.from_pretrained(
+            "EleutherAI/gpt-j-6B",
+            num_labels=2,
+            output_hidden_states=config.get("output_hidden_states", False),
+            torch_dtype=torch.float16,
+            device_map="auto",
+        )
+
+        if "gpt" in config["model_name"].lower():
             self.model.config.pad_token_id = self.model.config.eos_token_id
 
     """
@@ -32,7 +41,8 @@ class ShardedBinaryHFModule(BaseModule):
         return torch.softmax(self(batch), axis=1)[:, 1].cpu()
 
     def configure_optimizers(self):
-        optimizer = optim.AdamW(self.parameters(), lr=self.config['lr'])
+        optimizer = optim.AdamW(self.parameters(), lr=self.config["lr"])
         lr_scheduler = optim.lr_scheduler.MultiStepLR(
-            optimizer, milestones=[1, 2], gamma=0.1)
+            optimizer, milestones=[1, 2], gamma=0.1
+        )
         return [optimizer], [lr_scheduler]

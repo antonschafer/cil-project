@@ -18,11 +18,11 @@ class BaseDataset(Dataset):
             return set(data)
 
         if self.full_data:
-            self.data_neg = read_txt('./twitter-datasets/train_neg_full.txt')
-            self.data_pos = read_txt('./twitter-datasets/train_pos_full.txt')
+            self.data_neg = read_txt("./twitter-datasets/train_neg_full.txt")
+            self.data_pos = read_txt("./twitter-datasets/train_pos_full.txt")
         else:
-            self.data_neg = read_txt('./twitter-datasets/train_neg.txt')
-            self.data_pos = read_txt('./twitter-datasets/train_pos.txt')
+            self.data_neg = read_txt("./twitter-datasets/train_neg.txt")
+            self.data_pos = read_txt("./twitter-datasets/train_pos.txt")
 
     def preprocess_data(self):
 
@@ -34,14 +34,25 @@ class BaseDataset(Dataset):
 
         # tokenize
         print("Tokenizing data...")
-        tokens_pos = self.tokenizer(list(self.data_pos), padding='max_length',
-                                    max_length=104, truncation=True, return_tensors="pt")['input_ids']
-        tokens_neg = self.tokenizer(list(self.data_neg), padding='max_length',
-                                    max_length=104, truncation=True, return_tensors="pt")['input_ids']
+        tokens_pos = self.tokenizer(
+            list(self.data_pos),
+            padding="max_length",
+            max_length=104,
+            truncation=True,
+            return_tensors="pt",
+        )["input_ids"]
+        tokens_neg = self.tokenizer(
+            list(self.data_neg),
+            padding="max_length",
+            max_length=104,
+            truncation=True,
+            return_tensors="pt",
+        )["input_ids"]
 
         all_tokens = torch.cat((tokens_pos, tokens_neg))
-        labels = torch.cat((torch.ones((len(self.data_pos))),
-                           torch.zeros((len(self.data_neg)))))
+        labels = torch.cat(
+            (torch.ones((len(self.data_pos))), torch.zeros((len(self.data_neg))))
+        )
         labels_vector = torch.zeros((labels.shape[0], 2))
         labels_vector[range(labels_vector.shape[0]), labels.long()] = 1
         return all_tokens, labels_vector

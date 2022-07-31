@@ -21,9 +21,10 @@ class BaseModule(pl.LightningModule):
         self.model = None
 
     def load_ckpt(self, path):
-        model_dict = torch.load(path)['state_dict']
-        model_dict = {k.replace('model.', ''): v for k,
-                      v in model_dict.items() if 'model' in k}
+        model_dict = torch.load(path)["state_dict"]
+        model_dict = {
+            k.replace("model.", ""): v for k, v in model_dict.items() if "model" in k
+        }
         self.model.load_state_dict(model_dict)
 
     def preds_labels_loss(self, batch):
@@ -44,20 +45,27 @@ class BaseModule(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         preds, labels, loss = self.preds_labels_loss(batch)
-        self.log("train_loss", loss.item(), on_step=True,
-                 on_epoch=True, prog_bar=True, logger=True)
-        self.log("train_accuracy", ((preds > 0.5) == labels).float().mean(), on_step=True,  # TODO check train acc correct
-                 on_epoch=True, prog_bar=True, logger=True)
+        self.log(
+            "train_loss",
+            loss.item(),
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+            logger=True,
+        )
+        self.log(
+            "train_accuracy",
+            ((preds > 0.5) == labels).float().mean(),
+            on_step=True,  # TODO check train acc correct
+            on_epoch=True,
+            prog_bar=True,
+            logger=True,
+        )
         return loss
 
-    def validation_step(self, batch, batch_idx,dataloader_idx=None):
-        preds, labels, loss = self.preds_labels_loss(
-            batch)
-        return {
-            "preds": preds.tolist(),
-            "labels": labels.tolist(),
-            "loss": loss.item()
-        }
+    def validation_step(self, batch, batch_idx, dataloader_idx=None):
+        preds, labels, loss = self.preds_labels_loss(batch)
+        return {"preds": preds.tolist(), "labels": labels.tolist(), "loss": loss.item()}
 
     @staticmethod
     def aggregate_outputs(outputs):
@@ -70,16 +78,22 @@ class BaseModule(pl.LightningModule):
         return preds, labels, loss
 
     def validation_epoch_end(self, outputs):
-        def process_val_output(val_outputs,val_idx):
+        def process_val_output(val_outputs, val_idx):
             preds, labels, loss = self.aggregate_outputs(val_outputs)
             bin_preds = preds > 0.5
             acc = np.mean(bin_preds == labels)
 
-            self.log("val_loss"+ ( ("_"+str(val_idx)) if val_idx >0 else "")  , loss)
-            self.log("val_accuracy"+(("_"+str(val_idx))if val_idx >0 else ""), acc)
+            self.log("val_loss" + (("_" + str(val_idx)) if val_idx > 0 else ""), loss)
+            self.log(
+                "val_accuracy" + (("_" + str(val_idx)) if val_idx > 0 else ""), acc
+            )
 
-            print("Validation Classification Report for validation loader" +(("_"+str(val_idx)) if val_idx >0 else "")+":")
-            print(classification_report(labels, bin_preds, zero_division=0,digits=4))
+            print(
+                "Validation Classification Report for validation loader"
+                + (("_" + str(val_idx)) if val_idx > 0 else "")
+                + ":"
+            )
+            print(classification_report(labels, bin_preds, zero_division=0, digits=4))
 
         if isinstance(outputs[0], dict):
             process_val_output(outputs, 0)
@@ -87,16 +101,10 @@ class BaseModule(pl.LightningModule):
             # For multiple validation loaders
             for output_idx, output in enumerate(outputs):
                 process_val_output(output, output_idx)
-            
 
     def predict_step(self, batch, batch_idx):
-        preds, labels, loss = self.preds_labels_loss(
-            batch)
-        return {
-            "preds": preds.tolist(),
-            "labels": labels.tolist(),
-            "loss": loss.item()
-        }
+        preds, labels, loss = self.preds_labels_loss(batch)
+        return {"preds": preds.tolist(), "labels": labels.tolist(), "loss": loss.item()}
 
     def test_step(self, batch, batch_idx):
         return self.preds(batch)
@@ -104,8 +112,8 @@ class BaseModule(pl.LightningModule):
     def test_epoch_end(self, outputs):
         preds = np.concatenate(outputs)
         outputs = np.where(preds > 0.5, 1, -1)
-        ids = np.arange(1, outputs.shape[0]+1)
-        outdf = pd.DataFrame({"Id": ids, 'Prediction': outputs})
+        ids = np.arange(1, outputs.shape[0] + 1)
+        outdf = pd.DataFrame({"Id": ids, "Prediction": outputs})
         outdf.to_csv(os.path.join(wandb.run.dir, "output.csv"), index=False)
         np.save(os.path.join(wandb.run.dir, "test_preds.npy"), preds)
 

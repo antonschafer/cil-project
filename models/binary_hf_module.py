@@ -6,11 +6,14 @@ from models.base_module import BaseModule
 
 
 class BinaryHFModule(BaseModule):
-
     def __init__(self, config):
         super().__init__(config)
-        self.model = AutoModelForSequenceClassification.from_pretrained(config['model_name'], num_labels=2,output_hidden_states= config.get("output_hidden_states",False),
-                                                                        ignore_mismatched_sizes=True)
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            config["model_name"],
+            num_labels=2,
+            output_hidden_states=config.get("output_hidden_states", False),
+            ignore_mismatched_sizes=True,
+        )
 
     def forward(self, x):
         # x should be a dictionnary with at least a key input_ids
@@ -25,7 +28,8 @@ class BinaryHFModule(BaseModule):
         return torch.softmax(self(batch), axis=1)[:, 1].cpu()
 
     def configure_optimizers(self):
-        optimizer = optim.AdamW(self.parameters(), lr=self.config['lr'])
+        optimizer = optim.AdamW(self.parameters(), lr=self.config["lr"])
         lr_scheduler = optim.lr_scheduler.MultiStepLR(
-            optimizer, milestones=[1, 2], gamma=0.1)
+            optimizer, milestones=[1, 2], gamma=0.1
+        )
         return [optimizer], [lr_scheduler]

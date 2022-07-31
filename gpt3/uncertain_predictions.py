@@ -7,20 +7,23 @@ from transformers import AutoTokenizer
 from utils import load_pickle, load_wandb_file, get_base_datasets, MODELS, write_pickle
 import numpy as np
 import matplotlib.pyplot as plt
+
 COST_PER_TOKEN = 0.012 / 1000
-UNC_THRESHS = np.concatenate([np.linspace(0, 0.4, 101), np.linspace(0.4, 0.45, 101), np.linspace(0.45, 0.5, 501)])
-
-
+UNC_THRESHS = np.concatenate(
+    [np.linspace(0, 0.4, 101), np.linspace(0.4, 0.45, 101), np.linspace(0.45, 0.5, 501)]
+)
 
 
 def uncertain(preds, thresh):
     return np.abs(preds - 0.5) <= thresh
+
 
 def n_most_uncertain(preds, correct_preds, n):
     indexes = (np.abs(preds - 0.5) + correct_preds).argsort()[:n]
     final = np.full_like(preds, False, dtype=bool)
     final[indexes] = True
     return final
+
 
 def get_n_mis_pred_uncertain(preds, labels, thresh):
     unc = uncertain(preds, thresh)
@@ -33,7 +36,9 @@ def plot_uncertain_predictions(preds, labels, title, save_path):
     total_preds = len(preds)
 
     x = UNC_THRESHS
-    frac_mispred = [get_n_mis_pred_uncertain(preds, labels, t) / total_mis_preds for t in x]
+    frac_mispred = [
+        get_n_mis_pred_uncertain(preds, labels, t) / total_mis_preds for t in x
+    ]
     frac_total = [uncertain(preds, t).sum() / total_preds for t in x]
 
     plt.clf()
@@ -42,7 +47,7 @@ def plot_uncertain_predictions(preds, labels, title, save_path):
 
     # plot fraction mispredicted and fraction total vs x in left plot
     axs[0].plot(x, frac_mispred, label="fraction mispredicted")
-    axs[0].plot(x, frac_total, label="fraction total", color='lightgreen')
+    axs[0].plot(x, frac_total, label="fraction total", color="lightgreen")
     axs[0].set_xlabel("distance from 0.5 <= ...")
     axs[0].legend()
 
@@ -56,7 +61,9 @@ def plot_uncertain_predictions(preds, labels, title, save_path):
     print("Saved plot to", save_path)
 
 
-def get_and_plot_uncertain_predictions(datasets, preds, cost_lim, path_plot, path_masks):
+def get_and_plot_uncertain_predictions(
+    datasets, preds, cost_lim, path_plot, path_masks
+):
     total_costs = []
     perc_mispreds = []
     perc_test = []
@@ -94,12 +101,18 @@ def get_and_plot_uncertain_predictions(datasets, preds, cost_lim, path_plot, pat
             mispred_coverage = curr_mispred_coverage
             total_coverage = curr_total_coverage
 
-    print("\nCan cover {:.2f}% of mispredictions ({:.2f}% of all) with cost {}$\n".format(mispred_coverage * 100,
-                                                                                          total_coverage * 100,
-                                                                                          cost_lim))
+    print(
+        "\nCan cover {:.2f}% of mispredictions ({:.2f}% of all) with cost {}$\n".format(
+            mispred_coverage * 100, total_coverage * 100, cost_lim
+        )
+    )
 
     plt.clf()
-    plt.plot(total_costs, perc_mispreds, label="fraction of mispredictions on val_final set covered")
+    plt.plot(
+        total_costs,
+        perc_mispreds,
+        label="fraction of mispredictions on val_final set covered",
+    )
     plt.plot(total_costs, perc_valfinal, label="fraction of val_final set covered")
     plt.plot(total_costs, perc_test, label="fraction of test set covered")
     plt.xlabel("cost of inference on test and val_final")
@@ -115,10 +128,13 @@ def get_and_plot_uncertain_predictions(datasets, preds, cost_lim, path_plot, pat
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--run_id', type=str)
-    parser.add_argument('--cost_lim', type=float)
-    parser.add_argument('--save_dir', type=str,
-                        default=os.path.join("/cluster/scratch", os.environ["USER"]))
+    parser.add_argument("--run_id", type=str)
+    parser.add_argument("--cost_lim", type=float)
+    parser.add_argument(
+        "--save_dir",
+        type=str,
+        default=os.path.join("/cluster/scratch", os.environ["USER"]),
+    )
     args = parser.parse_args()
 
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
@@ -129,20 +145,30 @@ if __name__ == "__main__":
         if split == "test":
             dataset = BaseTestDataset(tokenizer=tokenizer, transform=None, pad=False)
         else:
-            dataset = BaseDataset(split=split, tokenizer=tokenizer, full_data=True, transform=None, pad=False)
+            dataset = BaseDataset(
+                split=split,
+                tokenizer=tokenizer,
+                full_data=True,
+                transform=None,
+                pad=False,
+            )
             dataset.labels = dataset.labels[:, 1].bool().numpy()
         datasets[split] = dataset
-        preds[split] = np.load(load_wandb_file("{}_preds.npy".format(split), args.run_id, args.save_dir))#
+        preds[split] = np.load(
+            load_wandb_file("{}_preds.npy".format(split), args.run_id, args.save_dir)
+        )  #
 
-
-    plot_uncertain_predictions(preds["val_final"], datasets["val_final"].labels,
-                               "Val Final Mispredictions by Prediction Uncertainty",
-                               "./mispred_plots/{}_ratios.png".format(args.run_id))
+    plot_uncertain_predictions(
+        preds["val_final"],
+        datasets["val_final"].labels,
+        "Val Final Mispredictions by Prediction Uncertainty",
+        "./mispred_plots/{}_ratios.png".format(args.run_id),
+    )
 
     get_and_plot_uncertain_predictions(
         datasets,
         preds,
         args.cost_lim,
-       "./mispred_plots/{}_coverage_cost.png".format(args.run_id),
+        "./mispred_plots/{}_coverage_cost.png".format(args.run_id),
         "./masks/{}_{}.pkl".format(args.run_id, str(args.cost_lim).replace(".", "-")),
     )

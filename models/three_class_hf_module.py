@@ -13,7 +13,8 @@ class ThreeClassHFModule(BaseModule):
     def __init__(self, config):
         super().__init__(config)
         self.model = AutoModelForSequenceClassification.from_pretrained(
-            config['model_name'],config.get("output_hidden_states",False))
+            config["model_name"], config.get("output_hidden_states", False)
+        )
 
     @staticmethod
     def fix_labels(y):
@@ -21,8 +22,14 @@ class ThreeClassHFModule(BaseModule):
         Transform labels such that they are compatible with the model
         (introduce neutral labels as zeros)  # TODO move to dataset for efficiency
         """
-        return torch.cat([y[:, 0].unsqueeze(1), torch.zeros(
-            y.shape[0], 1, device=y.device), y[:, 1].unsqueeze(1)], dim=1)
+        return torch.cat(
+            [
+                y[:, 0].unsqueeze(1),
+                torch.zeros(y.shape[0], 1, device=y.device),
+                y[:, 1].unsqueeze(1),
+            ],
+            dim=1,
+        )
 
     def forward(self, x):
         # x should be a dictionnary with at least a key input_ids
@@ -38,9 +45,10 @@ class ThreeClassHFModule(BaseModule):
         return torch.softmax(self(batch), axis=1)[:, 1].cpu()
 
     def configure_optimizers(self):
-        optimizer = optim.AdamW(self.parameters(), lr=self.config['lr'])
+        optimizer = optim.AdamW(self.parameters(), lr=self.config["lr"])
         lr_scheduler = optim.lr_scheduler.MultiStepLR(
-            optimizer, milestones=[1, 2], gamma=0.1)
+            optimizer, milestones=[1, 2], gamma=0.1
+        )
         return [optimizer], [lr_scheduler]
 
 
