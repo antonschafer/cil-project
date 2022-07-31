@@ -9,8 +9,8 @@ class BinaryHFModule(BaseModule):
 
     def __init__(self, config):
         super().__init__(config)
-        self.model = AutoModelForSequenceClassification.from_pretrained(config['model_name'], num_labels=2,output_hidden_states= config.get("output_hidden_states",False))
-
+        self.model = AutoModelForSequenceClassification.from_pretrained(config['model_name'], num_labels=2,output_hidden_states= config.get("output_hidden_states",False),
+                                                                        ignore_mismatched_sizes=True)
 
     def forward(self, x):
         # x should be a dictionnary with at least a key input_ids

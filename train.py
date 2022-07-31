@@ -34,7 +34,6 @@ def train(config, module):
     run_eval(model, ckpt_path=ckpt_path, train_ensemble_set=train_ensemble_set, val_set=val_set, val_final_set=val_final_set, test_set=test_set)
 
 
-
 if __name__ == '__main__':
 
     parser = get_base_arg_parser()
@@ -43,9 +42,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     config, module = get_bert_config(args)
-
-    os.environ["TRANSFORMERS_CACHE"] = config["save_dir"]
-
 
     # we are using 1 worker and that's ok
     warnings.filterwarnings("ignore", ".*does not have many workers.*")

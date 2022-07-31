@@ -11,12 +11,10 @@ def cross_val(config):
 
     val_set = EnsembleDataset(
         runs=config["model_runs"], split="val", save_dir=config["save_dir"])
-    
     val_final_set = EnsembleDataset(
         runs=config["model_runs"], split="val_final", save_dir=config["save_dir"])
     test_set = EnsembleDataset(
         runs=config["model_runs"], split="test", save_dir=config["save_dir"])
-
 
     val_final_loader = DataLoader(
         val_final_set, batch_size=config['batch_size'], num_workers=1)
@@ -31,10 +29,10 @@ def cross_val(config):
         val_x_set = torch.utils.data.Subset(val_set, indices_val_x)
 
         train_x_loader = DataLoader(
-            val_set, batch_size=config['batch_size'], shuffle=True, drop_last=True, num_workers=1)
+            train_x_set, batch_size=config['batch_size'], shuffle=True, drop_last=True, num_workers=1)
 
         val_x_loader = DataLoader(
-            val_set, batch_size=config['batch_size'], shuffle=True, drop_last=True, num_workers=1)
+            val_x_set, batch_size=config['batch_size'], shuffle=True, drop_last=True, num_workers=1)
 
         model = EnsembleModule(config=config, in_dim=val_set.dim)
         trainer = get_trainer(config)
