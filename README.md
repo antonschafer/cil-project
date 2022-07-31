@@ -12,6 +12,27 @@
 6. Run experiments, e.g. `bsub -R "rusage[mem=48000,ngpus_excl_p=1]" -W 24:00 bash sample_job.sh`
     - for interactive job run e.g `bsub -R "rusage[mem=48000,ngpus_excl_p=1]" -Ip bash` (then for setup `source setup.sh`)
 
+
+
+## Base models
+Distilbert emotion with whole training data: `python -m train --model distilbert_emotion --nepochs 3 --full_data --run_name distilbert_emotion --lr 2e-5 --batch_size 64 --seed 0 --train_size 1`
+
+Bert with whole training data:  `python -m train --model base --nepochs 3 --full_data --run_name base --lr 2e-5 --batch_size 64 --seed 0 --train_size 1`
+
+*Roberta with the whole training data: `python -m train --model twitter_roberta --nepochs 3 --full_data --run_name sample_job --lr 5e-5 --batch_size 64 --accumulate_grad_batches 2 --seed 0 --train_data_size 1`
+
+*Bert with 25% of the training data: `python -m train --model base --nepochs 3 --full_data --run_name base --lr 2e-5 --batch_size 64 --seed 0 --train_data_size .25`
+
+*Roberta with 25% of the training data: `python -m train --model twitter_roberta --nepochs 3 --full_data --run_name sample_job --lr 5e-5 --batch_size 64 --accumulate_grad_batches 2 --seed 3 --train_data_size .25`
+
+Distilbert emotion with 25% of the training data: `python -m train --model distilbert_emotion --nepochs 3 --full_data --run_name distilbert_emotion --lr 2e-5 --batch_size 64 --seed 0 --train_size .25`
+
+The seed changes the way the training data is split, so it is not the same 25% of the training data if the seed is different.
+
+For each model, we tried three different seeds (Only when using 25% of the data). {0, 1, 2} for Bert, {3, 4, 5} for Roberta and {6, 7, 8} for Distilbert emotion.
+
+Models with an asterix were the ones we used for the final ensemble.
+
 ## Compute Coverages:
 
 `python compute_coverage.py --model_runs {MODEL ID'S YOU WANT TO COMBINE}`
@@ -19,16 +40,6 @@
 Example: `python compute_coverage.py  --model_runs 1poxasnf 3hbr9c7b 2pd8pjdr z839cmze 1okolsk9`
 
 The code will produce the coverage for all the possible combinations of UP to three models
-
-## Base final models
-
-Bert with 25% of the training data: `python -m train --model base --nepochs 3 --full_data --run_name base --lr 2e-5 --batch_size 64 --seed 0 --train_data_size .25`
-
-Roberta with 25% of the training data: `python -m train --model twitter_roberta --nepochs 3 --full_data --run_name sample_job --lr 5e-5 --batch_size 64 --accumulate_grad_batches 2 --seed 3 --train_data_size .25`
-
-Roberta with the whole training data: `python -m train --model twitter_roberta --nepochs 3 --full_data --run_name sample_job --lr 5e-5 --batch_size 64 --accumulate_grad_batches 2 --seed 0 --train_data_size 1`
-
-The seed changes the way the training data is split, so it is not the same 25% of the training data if the seed is different
 
 ## Run ensemble:
 
@@ -50,3 +61,5 @@ The model runs correspond to the ID's of the 3 Base final models seen in the pre
     --compute_classification_metrics\
     --classification_n_classes 2`
 5. Run `python gpt3/gpt3_pred.py --predict True --run_id {RUN ID} --mask {NAME OF MASK GENERATED IN STEP 1}`
+
+GPT3 did not improve our final results and was therefore not part of our final model.
