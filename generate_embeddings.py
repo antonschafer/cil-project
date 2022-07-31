@@ -14,13 +14,26 @@ from models.sharded_module import ShardedBinaryHFModule
 
 def get_embeddings(model, dataset, has_labels, use_preds):
     model.to(device)
-    model = model.model
-    model.eval()
-    TEST_BATCH_SIZE = 32
     dataloader = DataLoader(dataset, batch_size=TEST_BATCH_SIZE)
     embeddings = []
     with torch.no_grad():
-        with torch.cuda.amp.autocast():
+        if isinstance(model,ShardedBinaryHFModule):
+            with torch.cuda.amp.autocast():
+                model = model.model
+                model.eval()
+                for batch in tqdm(dataloader):
+                    x = batch[0] if has_labels else batch
+                    x = x.to(device)
+                    out = model(x, output_hidden_states=True)
+                    if use_preds:
+                        embeddings.append(out.logits.softmax(dim=-1).detach().cpu())
+                    else:
+                        hidden_states = out["hidden_states"]
+                        last_4_cls = torch.cat([hidden_states[i][:, 0] for i in [-4, -3, -2, -1]], dim=-1)
+                        embeddings.append(last_4_cls.detach().cpu())
+        else:
+            model = model.model
+            model.eval()
             for batch in tqdm(dataloader):
                 x = batch[0] if has_labels else batch
                 x = x.to(device)
@@ -31,6 +44,7 @@ def get_embeddings(model, dataset, has_labels, use_preds):
                     hidden_states = out["hidden_states"]
                     last_4_cls = torch.cat([hidden_states[i][:, 0] for i in [-4, -3, -2, -1]], dim=-1)
                     embeddings.append(last_4_cls.detach().cpu())
+
     return torch.cat(embeddings, dim=0).numpy()
 
 

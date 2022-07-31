@@ -1,5 +1,5 @@
 from torch import optim
-from transformers import AutoModelForSequenceClassification,GPTNeoForSequenceClassification
+from transformers import AutoModelForSequenceClassification
 import torch
 
 from models.base_module import BaseModule
@@ -9,8 +9,7 @@ class BinaryHFModule(BaseModule):
 
     def __init__(self, config):
         super().__init__(config)
-        self.model = AutoModelForSequenceClassification.from_pretrained(config['model_name'], num_labels=2,torch_dtype=torch.float16, low_cpu_mem_usage=True,
-                                                                        ignore_mismatched_sizes=True,output_hidden_states= config.get("output_hidden_states",False))
+        self.model = AutoModelForSequenceClassification.from_pretrained(config['model_name'], num_labels=2,output_hidden_states= config.get("output_hidden_states",False))
 
 
     def forward(self, x):
