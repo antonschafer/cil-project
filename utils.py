@@ -186,7 +186,7 @@ def get_base_datasets(config):
             split="val_final", tokenizer=tokenizer, full_data=config['full_data'], transform=data_transform,text_with_prompt=text_with_prompt)
 
         test_data = BaseTestDataset(
-            tokenizer=tokenizer, transform=data_transform)
+            tokenizer=tokenizer, transform=data_transform,text_with_prompt=text_with_prompt)
 
         # save to cache
         print("Saving datasets to cache:", cache_file)
