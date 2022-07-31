@@ -12,6 +12,9 @@
 6. Run experiments, e.g. `bsub -R "rusage[mem=48000,ngpus_excl_p=1]" -W 24:00 bash sample_job.sh`
     - for interactive job run e.g `bsub -R "rusage[mem=48000,ngpus_excl_p=1]" -Ip bash` (then for setup `source setup.sh`)
 
+## Run baselines:
+- To run the TFIDF baseline run python3 baselines.py --tfidf --full_data
+- To run the Glove baseline run python3 baselines.py --glove --full_data
 
 ## Run ensemble:
 1. Make sure all runs you want to use as submodels have train_ensemble_preds.npy, val_preds.npy, val_final_preds.npy, and test_preds.npy files. If they don't exist for a particular run with a model, run `python -m test --model ... --run_id ...  --save_to_wandb` to generate them.
