@@ -16,9 +16,14 @@
 - To run the TFIDF baseline run python3 baselines.py --tfidf --full_data
 - To run the Glove baseline run python3 baselines.py --glove --full_data
 
-## GPT-J Embeddings:
+## Create Embeddings:
+### Twitter Roberta
+Run `python -m generate_embeddings --model twitter_roberta_embeddings --save_to_wandb`
+### Twitter Sentiment Roberta Predictions
+Run `python -m generate_embeddings --model twitter_roberta_pos_neut_neg_preds --save_to_wandb`
+### GPT-J:
 - Requires a GPU with more than 12GB of memory.
-- Run python -m generate_embeddings  --model gptj --save_to_wandb
+- Run `python -m generate_embeddings  --model gptj --save_to_wandb`
 
 
 
