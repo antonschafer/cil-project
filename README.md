@@ -16,6 +16,11 @@
 - To run the TFIDF baseline run python3 baselines.py --tfidf --full_data
 - To run the Glove baseline run python3 baselines.py --glove --full_data
 
+## GPT-J Embeddings:
+- Requires a GPU with more than 12GB of memory.
+- Run python -m generate_embeddings  --model gptj --save_to_wandb
+
+
 ## Run ensemble:
 1. Make sure all runs you want to use as submodels have train_ensemble_preds.npy, val_preds.npy, val_final_preds.npy, and test_preds.npy files. If they don't exist for a particular run with a model, run `python -m test --model ... --run_id ...  --save_to_wandb` to generate them.
 2. Include embeddings by including a run where embeddings were predicted (e.g. run 3tc5cxtj or 35hiik2s)
