@@ -21,7 +21,7 @@ Twitter Roberta:
 - Run `python -m generate_embeddings --model twitter_roberta_embeddings --save_to_wandb`
 
 Twitter Sentiment Roberta Predictions:
-Run `python -m generate_embeddings --model twitter_roberta_pos_neut_neg_preds --save_to_wandb`
+- Run `python -m generate_embeddings --model twitter_roberta_pos_neut_neg_preds --save_to_wandb`
 
 GPT-J:
 - Requires a GPU with more than 12GB of memory.
