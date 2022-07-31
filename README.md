@@ -22,10 +22,13 @@ The code will produce the coverage for all the possible combinations of UP to th
 
 ## Base final models
 
-`python -m train --model base --nepochs 3 --full_data --run_name base --lr 2e-5 --batch_size 64 --seed 0 --train_data_size .25`
-`python -m train --model twitter_roberta --nepochs 3 --full_data --run_name sample_job --lr 5e-5 --batch_size 64 --accumulate_grad_batches 2 --seed 3 --train_data_size .25`
-`python -m train --model twitter_roberta --nepochs 3 --full_data --run_name sample_job --lr 5e-5 --batch_size 64 --accumulate_grad_batches 2 --seed 0 --train_data_size 1`
+Bert with 25% of the training data: `python -m train --model base --nepochs 3 --full_data --run_name base --lr 2e-5 --batch_size 64 --seed 0 --train_data_size .25`
 
+Roberta with 25% of the training data: `python -m train --model twitter_roberta --nepochs 3 --full_data --run_name sample_job --lr 5e-5 --batch_size 64 --accumulate_grad_batches 2 --seed 3 --train_data_size .25`
+
+Roberta with the whole training data: `python -m train --model twitter_roberta --nepochs 3 --full_data --run_name sample_job --lr 5e-5 --batch_size 64 --accumulate_grad_batches 2 --seed 0 --train_data_size 1`
+
+The seed changes the way the training data is split, so it is not the same 25% of the training data if the seed is different
 
 ## Run ensemble:
 
