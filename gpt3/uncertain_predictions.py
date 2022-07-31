@@ -3,12 +3,8 @@ import os
 from datasets.version import DATA_VERSION
 import openai
 from transformers import AutoTokenizer
-from datasets.base_dataset import BaseDataset
-from datasets.base_testdataset import BaseTestDataset
-from gpt3.prepare_data import save_dir
 from utils import load_pickle, load_wandb_file, get_base_datasets, MODELS, write_pickle
 import numpy as np
-from utils import get_base_arg_parser, get_base_datasets, get_bert_config, get_trainer
 import matplotlib.pyplot as plt
 import pandas as pd
 import time
@@ -20,9 +16,9 @@ def get_uncertain_from_run(run, save_dir):
     preds = np.load(load_wandb_file('train_ensemble_preds.npy', run, save_dir))
     correct_preds = np.load(load_wandb_file('train_ensemble_correct_preds.npy', run, save_dir))
 
-    uncertain_keep = n_most_uncertain(preds, correct_preds, 1000)
+    uncertain_keep = n_most_uncertain(preds, correct_preds, 5000)
 
-    random_train = np.random.choice(np.where(~uncertain_keep)[0], 1000, replace=False)
+    random_train = np.random.choice(np.where(~uncertain_keep)[0], 5000, replace=False)
     train = np.append(random_train, np.where(uncertain_keep))
 
     filename = "../twitter-datasets/full_train_ensemble" +  "_v{}.csv".format(
@@ -31,7 +27,7 @@ def get_uncertain_from_run(run, save_dir):
     tweets = df.iloc[train]
     tweets = tweets.rename(columns={'texts': 'prompt', 'labels': 'completion'})
 
-    promptt = "Tweet: {}\n Sentiment: "
+    promptt = "{}\n Sentiment: "
     labels = {
         1: "positive",
         0: "negative"
@@ -78,7 +74,7 @@ def load_data():
 
 def get_test_uncertain_from_run(run, save_dir):
     test = np.load(load_wandb_file('test_preds.npy', run, save_dir))
-    test_preds = test >= .5
+    test_preds = test > .5
     df = pd.DataFrame(load_data(), columns=['texts'])
     masks = np.load('../gpt3/masks/1vox48hx_4-0.pkl', allow_pickle=True)
     test_mask = masks[0]
@@ -90,7 +86,7 @@ def get_test_uncertain_from_run(run, save_dir):
     preds = [False] * len(tweets)
     for j, i in enumerate(tweets):
         w = openai.Completion.create(model="curie:ft-personal-2022-07-27-15-32-23", prompt=i, temperature=0,
-                                     max_tokens=1)
+                                    max_tokens=1)
         preds[j] = w['choices'][0]['text'] == ' positive'
         time.sleep(2)
 
@@ -214,8 +210,8 @@ if __name__ == "__main__":
 
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
 
-    #get_uncertain_from_run('1vox48hx', args.save_dir)
-    get_test_uncertain_from_run('1vox48hx', args.save_dir)
+    get_uncertain_from_run('30xtapak', args.save_dir)
+   # get_test_uncertain_from_run('1vox48hx', args.save_dir)
 
     #datasets, preds = {}, {}
     #for split in ["val_final", "test"]:
