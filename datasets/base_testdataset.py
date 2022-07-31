@@ -18,7 +18,7 @@ class BaseTestDataset(Dataset):
             # drop indices
             return [",".join(x.split(",")[1:]) for x in data]
 
-        self.test_data = read_txt('./twitter-datasets/test_data.txt')
+        self.test_data = read_txt('twitter-datasets/test_data.txt')
 
     def preprocess_data(self):
 
