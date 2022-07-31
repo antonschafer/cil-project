@@ -9,3 +9,4 @@ batch_size: 16
 accumulate_grad_batches: 1
 full_data: True
 debug: False
+es_patience: 3

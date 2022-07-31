@@ -50,7 +50,6 @@ def get_embeddings(model, dataset, has_labels, use_preds):
 
 def save_embeddings(config, module):
     
-
     if config["save_to_wandb"]:
         wandb.init(project="twitter-sentiment-analysis",
                    dir=config["save_dir"], name=config["run_name"], config=config)

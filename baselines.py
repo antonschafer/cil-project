@@ -117,7 +117,6 @@ def run_glove(config):
     
     callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
 
-
     model.compile(loss='binary_crossentropy', optimizer=opti)
 
     print(train_data_glove.shape)

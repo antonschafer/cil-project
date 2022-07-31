@@ -23,12 +23,17 @@ class BaseTestDataset(Dataset):
         if self.text_with_prompt:
             self.test_data = ["Twitter Sentiment Analysis Examples.\n\n Tweet: {}\n Sentiment: ".format(x) for x in self.test_data]
 
-    def preprocess_data(self):
 
+    def preprocess_data(self):
         # apply transform
         if self.transform is not None:
             print("Applying data transform...")
             self.test_data = list(map(self.transform, self.test_data))
+
+        if self.tokenizer.eos_token is None:
+            self.tokenizer.add_special_tokens({'eos_token': "<|endoftext|>"})
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 
         # tokenize
         print("Tokenizing data...")
