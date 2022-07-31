@@ -137,12 +137,12 @@ if __name__ == "__main__":
 
     plot_uncertain_predictions(preds["val_final"], datasets["val_final"].labels,
                                "Val Final Mispredictions by Prediction Uncertainty",
-                               "../gpt3/mispred_plots/{}_ratios.png".format(args.run_id))
+                               "./mispred_plots/{}_ratios.png".format(args.run_id))
 
     get_and_plot_uncertain_predictions(
         datasets,
         preds,
         args.cost_lim,
-       "../gpt3/mispred_plots/{}_coverage_cost.png".format(args.run_id),
-        "../gpt3/masks/{}_{}.pkl".format(args.run_id, str(args.cost_lim).replace(".", "-")),
+       "./mispred_plots/{}_coverage_cost.png".format(args.run_id),
+        "./masks/{}_{}.pkl".format(args.run_id, str(args.cost_lim).replace(".", "-")),
     )

@@ -7,6 +7,15 @@ import time
 import argparse
 import os
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def save_gpt3_train_data(run, save_dir):
     preds = np.load(load_wandb_file('train_ensemble_preds.npy', run, save_dir))
@@ -44,20 +53,20 @@ def load_data():
     return read_txt('../twitter-datasets/test_data.txt')
 
 
-def get_gpt3_predictions(run, save_dir):
-    test = np.load(load_wandb_file('test_preds.npy', run, save_dir))
+def get_gpt3_predictions(run, args):
+    test = np.load(load_wandb_file('test_preds.npy', run, args.save_dir))
     test_preds = test > .5
     df = pd.DataFrame(load_data(), columns=['texts'])
-    masks = np.load('../gpt3/masks/1vox48hx_4-0.pkl', allow_pickle=True)
+    masks = np.load(f'./masks/{args.mask}.pkl', allow_pickle=True)
     test_mask = masks[0]
     to_pred = df[test_mask]
     promptt = "{}\n Sentiment: "
     tweets = to_pred.texts.apply(lambda x: promptt.format(x))
-    openai.api_key = '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'
+    openai.api_key = 'ADD_API_KEY'
 
     preds = [False] * len(tweets)
     for j, i in enumerate(tweets):
-        w = openai.Completion.create(model="curie:ft-personal-2022-07-27-15-32-23", prompt=i, temperature=0,
+        w = openai.Completion.create(model=args.model, prompt=i, temperature=0,
                                      max_tokens=1)
         preds[j] = w['choices'][0]['text'] == ' positive'
         time.sleep(3)
@@ -89,10 +98,14 @@ def get_n_mis_pred_uncertain(preds, labels, thresh):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--run_id', type=str)
-    parser.add_argument('--cost_lim', type=float)
+    parser.add_argument('--mask', type=str)
     parser.add_argument('--save_dir', type=str,
                         default=os.path.join("/cluster/scratch", os.environ["USER"]))
-    args = parser.parse_args()
+    parser.add_argument('--predict', type=str2bool, default=False)
+    parser.add_argument('--model', type=str, default="curie:ft-personal-2022-07-27-15-32-23")
 
-    save_gpt3_train_data(args.run_id, args.save_dir)
-    get_gpt3_predictions(args.run_id, args.save_dir)
+    args = parser.parse_args()
+    if not args.predict:
+        save_gpt3_train_data(args.run_id, args.save_dir)
+    else:
+        get_gpt3_predictions(args.run_id, args)
