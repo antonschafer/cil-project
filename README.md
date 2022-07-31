@@ -7,10 +7,11 @@
     - `conda activate cil`
     - `conda install pip`
 3. install packages `pip install -r requirements.txt`
-4. create datasplit `python create_splits.py`
-5. Login to wandb: wandb login
+4. Put the twitter dataset folder in a folder name twitter-datasets.
+5. create datasplit `python create_splits.py`
+6. Login to wandb: wandb login
 6. Run experiments, e.g. `bsub -R "rusage[mem=48000,ngpus_excl_p=1]" -W 24:00 bash sample_job.sh`
-    - for interactive job run e.g `bsub -R "rusage[mem=48000,ngpus_excl_p=1]" -Ip bash` (then for setup `source setup.sh`)
+7   - for interactive job run e.g `bsub -R "rusage[mem=48000,ngpus_excl_p=1]" -Ip bash` (then for setup `source setup.sh`)
 
 ## Run baselines:
 - To run the TFIDF baseline run python3 baselines.py --tfidf --full_data
