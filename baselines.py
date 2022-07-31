@@ -19,6 +19,8 @@ np.random.seed(0)
 import torchtext
 import torch
 from IPython import embed
+from utils import get_base_datasets
+from datasets.version import DATA_VERSION
 
 def load_data(full_data):
 
@@ -28,9 +30,9 @@ def load_data(full_data):
         return set(data)
 
 
-    train_filename = "./twitter-datasets/" + ("full_" if full_data else "small_") + "train.csv"
-    val_filename = "./twitter-datasets/" + ("full_" if full_data else "small_") + "val.csv"
-    valfinal_filename = "./twitter-datasets/" + ("full_" if full_data else "small_") + "val_final.csv"
+    train_filename = "./twitter-datasets/" + ("full_" if full_data else "small_") + "train_v{}.csv".format(DATA_VERSION)
+    val_filename = "./twitter-datasets/" + ("full_" if full_data else "small_") + "val_v{}.csv".format(DATA_VERSION)
+    valfinal_filename = "./twitter-datasets/" + ("full_" if full_data else "small_") + "val_final_v{}.csv".format(DATA_VERSION)
 
     train_df = pd.read_csv(train_filename)
     val_df = pd.read_csv(val_filename)
@@ -151,11 +153,10 @@ def run_glove(config):
 
 def run_tfidf(config):
 
-    wandb.init(project="tfidf")
+    #wandb.init(project="tfidf")
 
-    train_data, _, val_data, val_final_data, test_data = get_base_datasets(config)
+    train_data, val_data, val_final_data, test_data = load_data(config["full_data"])
     stopwords = nltk.corpus.stopwords.words('english')
-
 
     train_data["texts_clean"] = clean_texts(train_data["texts"], stopwords)
     val_data["texts_clean"] = clean_texts(val_data["texts"], stopwords)
@@ -210,6 +211,8 @@ if __name__ == '__main__':
 
     if config["save_dir"] == "":
         config["save_dir"] = os.path.join("/cluster/scratch", os.environ["USER"])
+
+    config["model"] = "base"
 
     if args.tfidf:
         run_tfidf(config)
