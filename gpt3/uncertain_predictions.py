@@ -42,7 +42,7 @@ def plot_uncertain_predictions(preds, labels, title, save_path):
 
     # plot fraction mispredicted and fraction total vs x in left plot
     axs[0].plot(x, frac_mispred, label="fraction mispredicted")
-    axs[0].plot(x, frac_total, label="fraction total")
+    axs[0].plot(x, frac_total, label="fraction total", color='lightgreen')
     axs[0].set_xlabel("distance from 0.5 <= ...")
     axs[0].legend()
 
