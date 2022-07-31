@@ -1,6 +1,8 @@
 import argparse
 import os
 import warnings
+os.environ["TRANSFORMERS_CACHE"] = "/cluster/scratch/{}/hugging_cache/".format(os.environ["USER"])
+
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -8,30 +10,46 @@ from tqdm import tqdm
 import wandb
 from test import TEST_BATCH_SIZE
 from utils import get_base_datasets, get_bert_config, device
-
+from models.sharded_module import ShardedBinaryHFModule
 
 def get_embeddings(model, dataset, has_labels, use_preds):
     model.to(device)
-    model.eval()
     dataloader = DataLoader(dataset, batch_size=TEST_BATCH_SIZE)
     embeddings = []
     with torch.no_grad():
-        for batch in tqdm(dataloader):
-            x = batch[0] if has_labels else batch
-            x = x.to(device)
-            out = model(x, output_hidden_states=True)
-            if use_preds:
-                embeddings.append(out.logits.softmax(dim=-1).detach().cpu())
-            else:
-                hidden_states = out["hidden_states"]
-                last_4_cls = torch.cat([hidden_states[i][:, 0] for i in [-4, -3, -2, -1]], dim=-1)
-                embeddings.append(last_4_cls.detach().cpu())
+        if isinstance(model,ShardedBinaryHFModule):
+            with torch.cuda.amp.autocast():
+                model = model.model
+                model.eval()
+                for batch in tqdm(dataloader):
+                    x = batch[0] if has_labels else batch
+                    x = x.to(device)
+                    out = model(x, output_hidden_states=True)
+                    if use_preds:
+                        embeddings.append(out.logits.softmax(dim=-1).detach().cpu())
+                    else:
+                        hidden_states = out["hidden_states"]
+                        last_4_cls = torch.cat([hidden_states[i][:, 0] for i in [-4, -3, -2, -1]], dim=-1)
+                        embeddings.append(last_4_cls.detach().cpu())
+        else:
+            model = model.model
+            model.eval()
+            for batch in tqdm(dataloader):
+                x = batch[0] if has_labels else batch
+                x = x.to(device)
+                out = model(x, output_hidden_states=True)
+                if use_preds:
+                    embeddings.append(out.logits.softmax(dim=-1).detach().cpu())
+                else:
+                    hidden_states = out["hidden_states"]
+                    last_4_cls = torch.cat([hidden_states[i][:, 0] for i in [-4, -3, -2, -1]], dim=-1)
+                    embeddings.append(last_4_cls.detach().cpu())
+
     return torch.cat(embeddings, dim=0).numpy()
 
 
 def save_embeddings(config, module):
-    model = module(config)
-
+    
     if config["save_to_wandb"]:
         wandb.init(project="twitter-sentiment-analysis",
                    dir=config["save_dir"], name=config["run_name"], config=config)
@@ -41,6 +59,8 @@ def save_embeddings(config, module):
                    dir=config["save_dir"], config=config)
 
     _, train_ensemble_set, val_set, val_final_set, test_set = get_base_datasets(config)
+
+    model = module(config)
 
     train_ensemble_embeddings = get_embeddings(model, train_ensemble_set, has_labels=True, use_preds=config["use_preds"])
     np.save(os.path.join(wandb.run.dir, "train_ensemble_preds.npy"), train_ensemble_embeddings)

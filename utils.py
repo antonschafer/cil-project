@@ -5,6 +5,8 @@ import dill  # can pickle lambdas
 import torch
 from transformers import AutoModel, AutoModelForSequenceClassification, AutoTokenizer
 import os
+
+from transformers import AutoModel, AutoTokenizer
 import wandb
 import yaml
 import pandas as pd
@@ -12,13 +14,18 @@ from datasets.base_dataset import BaseDataset
 from datasets.base_testdataset import BaseTestDataset
 from datasets.version import DATA_VERSION
 from models.binary_hf_module import BinaryHFModule
+from models.sharded_module import ShardedBinaryHFModule
+
 from models.three_class_hf_module import ThreeClassHFModule
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 from pytorch_lightning.loggers import WandbLogger
 import wandb
+from pytorch_lightning.strategies import DeepSpeedStrategy
 
+
+from IPython import embed
 DEBUG_TRAINER_ARGS = {"limit_train_batches": 10,
                       "limit_val_batches": 5}
 
@@ -50,6 +57,12 @@ MODELS = {
         "model_name": "cardiffnlp/twitter-xlm-roberta-base-sentiment",
         "tokenizer_name": "cardiffnlp/twitter-xlm-roberta-base-sentiment",
         "module": ThreeClassHFModule,
+        "data_transform": lambda x: x.replace("<user>", "@user").replace("<url>", "http"),
+    },
+    "gptj": {
+        "model_name": "EleutherAI/gpt-j-6B",
+        "tokenizer_name": "EleutherAI/gpt-j-6B",
+        "module": ShardedBinaryHFModule,
         "data_transform": lambda x: x.replace("<user>", "@user").replace("<url>", "http"),
     },
     "distilbert_emotion": {
@@ -148,9 +161,10 @@ def get_base_datasets(config):
     if "seed" not in config:
         config["seed"] = 0
 
+    text_with_prompt = config.get("text_with_prompt",False) or "gpt" in config["model"]
     # check if can load from cache
     option_str = "_".join(
-        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform)), str(config["seed"]), str(config["train_data_size"]), "v" + str(DATA_VERSION)])
+        [config["tokenizer_name"].split("/")[-1], str(config["full_data"]), str(function_to_hash(data_transform)), str(config["seed"]), str(text_with_prompt), str(config["train_data_size"]), "v" + str(DATA_VERSION)])
     cache_dir = os.path.join(config["save_dir"], "cache")
     os.makedirs(cache_dir, exist_ok=True)
     cache_file = os.path.join(cache_dir, option_str + ".pkl")
@@ -159,20 +173,20 @@ def get_base_datasets(config):
         return load_pickle(cache_file)
     else:
         print("Building datasets...")
-
+        
         # build datasets
         tokenizer = AutoTokenizer.from_pretrained(config['tokenizer_name'])
         train_data = BaseDataset(split="train", tokenizer=tokenizer,
-                                 full_data=config['full_data'], seed=config['seed'], transform=data_transform, train_data_size=config['train_data_size'])
+                                 full_data=config['full_data'], seed=config['seed'], transform=data_transform, train_data_size=config['train_data_size'],text_with_prompt=text_with_prompt)
         train_ensemble_data = BaseDataset(split="train_ensemble", tokenizer=tokenizer,
-                                 full_data=config['full_data'], seed=config['seed'], transform=data_transform, train_data_size=1)
+                                 full_data=config['full_data'], seed=config['seed'], transform=data_transform, train_data_size=1,text_with_prompt=text_with_prompt)
         val_data = BaseDataset(split="val", tokenizer=tokenizer,
-                               full_data=config['full_data'], transform=data_transform)
+                               full_data=config['full_data'], transform=data_transform,text_with_prompt=text_with_prompt)
         val_final_data = BaseDataset(
-            split="val_final", tokenizer=tokenizer, full_data=config['full_data'], transform=data_transform)
+            split="val_final", tokenizer=tokenizer, full_data=config['full_data'], transform=data_transform,text_with_prompt=text_with_prompt)
 
         test_data = BaseTestDataset(
-            tokenizer=tokenizer, transform=data_transform)
+            tokenizer=tokenizer, transform=data_transform,text_with_prompt=text_with_prompt)
 
         # save to cache
         print("Saving datasets to cache:", cache_file)
@@ -225,12 +239,17 @@ def get_trainer(config):
         project="twitter-sentiment-analysis", name=config["run_name"], save_dir=config["save_dir"])
 
     callbacks = [EarlyStopping(monitor="val_loss", mode="min", patience=config["es_patience"]),
-                 ModelCheckpoint(monitor='val_loss', dirpath=wandb.run.dir, filename="model")]
-
+                 ModelCheckpoint(monitor='val_loss', dirpath=config["save_dir"], filename="model")]
     extra_args = DEBUG_TRAINER_ARGS if config["debug"] else {}
-    trainer = pl.Trainer(max_epochs=config['nepochs'], accelerator="auto", callbacks=callbacks,
+    if "gpt" in config["model"]:
+        extra_args["strategy"]= DeepSpeedStrategy(
+                                    stage=3,
+                                    offload_optimizer=True,
+                                    offload_parameters=True)
+    
+    trainer = pl.Trainer(max_epochs=config['nepochs'],  callbacks=callbacks, precision = config.get("precision",32),
                          val_check_interval=config['val_check_interval'], gradient_clip_val=1, logger=wandb_logger,
-                         accumulate_grad_batches=config['accumulate_grad_batches'],
+                         accumulate_grad_batches=config['accumulate_grad_batches'], accelerator= "auto",
                          **extra_args)
     return trainer
 

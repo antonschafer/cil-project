@@ -50,7 +50,7 @@ class BaseModule(pl.LightningModule):
                  on_epoch=True, prog_bar=True, logger=True)
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, batch_idx,dataloader_idx=None):
         preds, labels, loss = self.preds_labels_loss(
             batch)
         return {
@@ -70,15 +70,24 @@ class BaseModule(pl.LightningModule):
         return preds, labels, loss
 
     def validation_epoch_end(self, outputs):
-        preds, labels, loss = self.aggregate_outputs(outputs)
-        bin_preds = preds > 0.5
-        acc = np.mean(bin_preds == labels)
+        def process_val_output(val_outputs,val_idx):
+            preds, labels, loss = self.aggregate_outputs(val_outputs)
+            bin_preds = preds > 0.5
+            acc = np.mean(bin_preds == labels)
 
-        self.log("val_loss", loss)
-        self.log("val_accuracy", acc)
+            self.log("val_loss"+ ( ("_"+str(val_idx)) if val_idx >0 else "")  , loss)
+            self.log("val_accuracy"+(("_"+str(val_idx))if val_idx >0 else ""), acc)
 
-        print("Validation Classification Report:")
-        print(classification_report(labels, bin_preds, zero_division=0))
+            print("Validation Classification Report for validation loader" +(("_"+str(val_idx)) if val_idx >0 else "")+":")
+            print(classification_report(labels, bin_preds, zero_division=0,digits=4))
+
+        if isinstance(outputs[0], dict):
+            process_val_output(outputs, 0)
+        else:
+            # For multiple validation loaders
+            for output_idx, output in enumerate(outputs):
+                process_val_output(output, output_idx)
+            
 
     def predict_step(self, batch, batch_idx):
         preds, labels, loss = self.preds_labels_loss(

@@ -1,12 +1,16 @@
-nepochs: 10
-model: "base"
-run_name: "bert_base"
+nepochs: 5
+model: "gptj"
+run_name: "gptj"
 save_dir: ""
 nepochs: 2
 val_check_interval: 1.0
 lr: 0.00002
-batch_size: 16
+batch_size: 4
+precision: 32
 accumulate_grad_batches: 1
 full_data: True
 debug: False
 es_patience: 3
+seed: 1
+train_data_size: 0.4
+

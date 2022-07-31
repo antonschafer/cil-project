@@ -13,7 +13,7 @@ class ThreeClassHFModule(BaseModule):
     def __init__(self, config):
         super().__init__(config)
         self.model = AutoModelForSequenceClassification.from_pretrained(
-            config['model_name'])
+            config['model_name'],config.get("output_hidden_states",False))
 
     @staticmethod
     def fix_labels(y):

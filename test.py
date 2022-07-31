@@ -25,7 +25,7 @@ def run_and_save_val(trainer, model, dataset, ckpt_path, split_name):
     wandb.run.summary["best_{}_acc".format(split_name)] = correct_preds.mean()
 
     print("Model Checkpoint Classification Report on {} data:".format(split_name))
-    print(classification_report(labels, preds > 0.5, zero_division=0))
+    print(classification_report(labels, preds > 0.5, zero_division=0,digits=4))
 
 
 def run_eval(model, ckpt_path, train_ensemble_set, val_set, val_final_set, test_set):

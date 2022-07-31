@@ -12,6 +12,14 @@
 6. Run experiments, e.g. `bsub -R "rusage[mem=48000,ngpus_excl_p=1]" -W 24:00 bash sample_job.sh`
     - for interactive job run e.g `bsub -R "rusage[mem=48000,ngpus_excl_p=1]" -Ip bash` (then for setup `source setup.sh`)
 
+## Run baselines:
+- To run the TFIDF baseline run python3 baselines.py --tfidf --full_data
+- To run the Glove baseline run python3 baselines.py --glove --full_data
+
+## GPT-J Embeddings:
+- Requires a GPU with more than 12GB of memory.
+- Run python -m generate_embeddings  --model gptj --save_to_wandb
+
 
 
 ## Base models
